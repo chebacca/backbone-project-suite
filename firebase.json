@@ -111,5 +111,15 @@
       "host": "localhost"
     },
     "singleProjectMode": true
+  },
+  "github": {
+    "repository": "https://github.com/chebacca/backbone-project-suite",
+    "documentation": "https://github.com/chebacca/backbone-project-suite#readme",
+    "issues": "https://github.com/chebacca/backbone-project-suite/issues",
+    "deployment": {
+      "webApp": "https://backbone-client.web.app",
+      "api": "https://us-central1-backbone-logic.cloudfunctions.net",
+      "licensing": "https://backbone-logic.web.app"
+    }
   }
 }
