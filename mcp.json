@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "firebase": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "firebase-tools@latest", 
+        "experimental:mcp",
+        "--dir", "/Users/chebrooks/Documents/IDE_Project/BACKBONE 14_2 & Website 2 full project files/Dashboard-v14_2",
+        "--only", "auth,firestore,storage,functions,hosting"
+      ],
+      "env": {
+        "FIREBASE_PROJECT_ID": "backbone-logic"
+      }
+    },
+    "firebase-licensing": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "firebase-tools@latest", 
+        "experimental:mcp",
+        "--dir", "/Users/chebrooks/Documents/IDE_Project/BACKBONE 14_2 & Website 2 full project files/dashboard-v14-licensing-website 2",
+        "--only", "auth,firestore,storage,functions,hosting"
+      ],
+      "env": {
+        "FIREBASE_PROJECT_ID": "backbone-logic"
+      }
+    }
+  }
+}
+

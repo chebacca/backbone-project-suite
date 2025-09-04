@@ -1,0 +1,278 @@
+# BACKBONE v14.2 - Root Level .gitignore
+# This file covers the entire monorepo while preserving individual project configurations
+
+# ============================================================================
+# DEPENDENCIES & PACKAGE MANAGERS
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnp
+.pnp.js
+jspm_packages/
+
+# ============================================================================
+# BUILD OUTPUTS & ARTIFACTS
+# ============================================================================
+dist/
+dist-ssr/
+build/
+out/
+*.local
+public/web-dist/
+apps/web/web-dist/
+apps/desktop/dist/
+apps/desktop/build/
+apps/desktop/release/
+.next/
+.nuxt/
+.turbo/
+.vite/
+
+# ============================================================================
+# ENVIRONMENT VARIABLES & SECRETS (CRITICAL SECURITY)
+# ============================================================================
+.env
+.env.*
+!.env.example
+!.env.production.example
+!.env.development.example
+*.env.bak
+*.env.backup
+*.env.local
+*.env.production
+*.env.development
+
+# Firebase environment configuration
+.runtimeconfig.json
+functions/.env
+functions/.env.*
+!functions/.env.example
+
+# Firebase Admin SDK service account keys (NEVER COMMIT THESE)
+*firebase-adminsdk-*.json
+*serviceAccount*.json
+backbone-logic-firebase-adminsdk-fbsvc-a4ae068c8f.json
+
+# Authentication tokens
+*token*.txt
+auth_token.txt
+
+# ============================================================================
+# EDITOR & IDE FILES
+# ============================================================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+
+# ============================================================================
+# OPERATING SYSTEM FILES
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ============================================================================
+# DATABASE FILES
+# ============================================================================
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+
+# Database backups
+*.sql.bak
+*.sql.backup
+*_backup_summary.json
+database_backup_*.sql
+
+# ============================================================================
+# TEMPORARY & CACHE FILES
+# ============================================================================
+tmp/
+temp/
+.cache/
+.parcel-cache/
+*.cache
+.npm
+.eslintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# ============================================================================
+# TESTING & COVERAGE
+# ============================================================================
+coverage/
+.nyc_output/
+*.lcov
+test-output/
+
+# ============================================================================
+# TYPESCRIPT
+# ============================================================================
+*.tsbuildinfo
+
+# ============================================================================
+# LOGS
+# ============================================================================
+logs/
+*.log
+*.log.bak
+*.log.backup
+*.log.old
+*.log.orig
+
+# ============================================================================
+# RUNTIME DATA
+# ============================================================================
+pids/
+*.pid
+*.seed
+*.pid.lock
+desktop-webonly.pid
+webonly.pid
+server.pid
+
+# ============================================================================
+# CERTIFICATES & SECURITY
+# ============================================================================
+*.pem
+*.key
+*.crt
+
+# ============================================================================
+# DEPLOYMENT & HOSTING
+# ============================================================================
+.vercel/
+.netlify/
+
+# Firebase caches
+.firebase/hosting.*.cache
+.firebase/functions.*.cache
+
+# Deployment artifacts
+deploy/assets/
+deploy/*.js
+deploy/*.html
+deploy/*.json
+deploy/*.css
+
+# ============================================================================
+# BACKUP FILES & DIRECTORIES
+# ============================================================================
+*backup*
+backups/
+archives/
+enum-fix-backups/
+db_backup_*/
+*_backup_*/
+backup_*/
+scripts-backup-*/
+
+# Comprehensive backup file patterns
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*_backup*
+*_old*
+*_tmp*
+*_temp*
+*~
+.#*
+#*#
+
+# ============================================================================
+# BUILD & TEST CACHE FILES
+# ============================================================================
+test-*.js
+test-*.html
+test-*.cjs
+test-*.ts
+test-*.tsx
+test-*.sh
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
+build-report_*.md
+
+# ============================================================================
+# UPLOADS & MEDIA
+# ============================================================================
+uploads/*
+!uploads/.gitkeep
+
+# ============================================================================
+# LARGE FILES & SESSION DATA
+# ============================================================================
+airflow/logs/**
+**/session_workflow_backup_*.json
+
+# ============================================================================
+# FRAMEWORK-SPECIFIC
+# ============================================================================
+
+# Prisma
+prisma/*.db
+prisma/migrations/*
+!prisma/migrations/*/
+
+# Electron
+dist-electron/
+
+# Gatsby
+.cache/
+public/
+
+# Storybook
+.out
+.storybook-out
+
+# ============================================================================
+# GENERATED DIRECTORIES
+# ============================================================================
+dataconnect-generated/
+
+# ============================================================================
+# PACKAGE OUTPUTS
+# ============================================================================
+*.tgz
+.yarn-integrity
+
+# ============================================================================
+# DOCKER
+# ============================================================================
+.dockerignore
+
+# ============================================================================
+# MISC
+# ============================================================================
+.node_repl_history
+
+# ============================================================================
+# PROJECT-SPECIFIC EXCLUSIONS
+# ============================================================================
+# Keep individual project .gitignore files active
+# This root .gitignore supplements but doesn't override them

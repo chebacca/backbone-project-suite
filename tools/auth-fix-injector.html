@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebOnly Authentication Fix Injector</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .button-container {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebOnly Authentication Fix Injector</h1>
+    
+    <p>This tool helps fix the "No authentication token available" error in web-only mode by injecting the fix script into your web application.</p>
+    
+    <h2>Instructions</h2>
+    <ol>
+        <li>Enter the URL of your web application below</li>
+        <li>Click "Open Application with Fix" to open your application in a new tab with the fix applied</li>
+        <li>Alternatively, copy the code snippet below and paste it into your browser's console while on your application page</li>
+    </ol>
+    
+    <div class="button-container">
+        <input type="text" id="appUrl" placeholder="Enter your application URL" style="padding: 10px; width: 70%;" value="https://backbone-client.web.app/">
+        <button onclick="openWithFix()">Open Application with Fix</button>
+    </div>
+    
+    <h2>Manual Injection</h2>
+    <p>Copy and paste this code into your browser's console while on your application page:</p>
+    
+    <div class="code-block">
+        <pre id="codeSnippet">
+/**
+ * WebOnly Authentication Fix
+ */
+(function() {
+  // Function to inject inline script content
+  function injectScript(scriptContent) {
+    const script = document.createElement('script');
+    script.textContent = scriptContent;
+    document.head.appendChild(script);
+    console.log('✅ Successfully injected script');
+  }
+
+  // Comprehensive fix script
+          const fixScript = `
+  /**
+   * Comprehensive WebOnly Authentication Fix
+   */
+  (function() {
+    console.log('🔧 Starting WebOnly Authentication Fix...');
+    
+    // Check and ensure Firebase Auth is properly initialized
+    async function ensureFirebaseAuth() {
+      console.log('🔍 Checking Firebase Authentication status...');
+      
+      try {
+        // Check if Firebase is initialized
+        if (!(window.firebaseApp || window.firebase)) {
+          console.error('❌ Firebase not initialized properly');
+          
+          // Try to get Firebase from the global scope
+          if (typeof firebase !== 'undefined') {
+            console.log('✅ Found global firebase object');
+            window.firebase = firebase;
+          } else {
+            // Try to load Firebase from the window context
+            console.log('⚠️ Attempting to find Firebase in other contexts...');
+            
+            // Check if Firebase SDK is already loaded on the page
+            const firebaseScripts = document.querySelectorAll('script[src*="firebase"]');
+            if (firebaseScripts.length > 0) {
+              console.log('✅ Firebase scripts already loaded on page');
+            } else {
+              console.error('❌ Firebase SDK not loaded on page');
+            }
+            
+            return false;
+          }
+        }
+        
+        // Get Firebase Auth instance safely
+        let firebaseAuth = null;
+        
+        // Try multiple ways to get Firebase Auth
+        if (window.firebaseAuth) {
+          console.log('✅ Found Firebase Auth in window.firebaseAuth');
+          firebaseAuth = window.firebaseAuth;
+        } else if (window.firebase && typeof window.firebase.auth === 'function') {
+          console.log('✅ Getting Firebase Auth from window.firebase');
+          firebaseAuth = window.firebase.auth();
+        } else if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') {
+          console.log('✅ Getting Firebase Auth from global firebase');
+          firebaseAuth = firebase.auth();
+        } else {
+          // Try to import Firebase Auth dynamically
+          try {
+            console.log('🔄 Attempting to import Firebase Auth dynamically');
+            const { getAuth } = await import('firebase/auth');
+            if (window.firebaseApp) {
+              firebaseAuth = getAuth(window.firebaseApp);
+            } else {
+              firebaseAuth = getAuth();
+            }
+            console.log('✅ Successfully imported Firebase Auth');
+          } catch (importError) {
+            console.error('❌ Failed to import Firebase Auth:', importError);
+          }
+        }
+        
+        if (!firebaseAuth) {
+          console.error('❌ Firebase Auth not available after all attempts');
+          return false;
+        }
+        
+        // Store the auth instance for later use
+        window.firebaseAuth = firebaseAuth;
+        
+        console.log('✅ Firebase Auth is available');
+        
+        // Check if user is signed in
+        const currentUser = firebaseAuth.currentUser;
+        if (!currentUser) {
+          console.log('⚠️ No Firebase user is currently signed in');
+          
+          // Try to restore session from stored credentials
+          const storedEmail = localStorage.getItem('auth_email');
+          const storedPassword = localStorage.getItem('auth_password');
+          
+          if (storedEmail && storedPassword) {
+            console.log('🔄 Attempting to sign in with stored credentials...');
+            
+            try {
+              // Use the firebaseAuth instance we already have
+              await firebaseAuth.signInWithEmailAndPassword(storedEmail, storedPassword);
+              console.log('✅ Successfully signed in with stored credentials');
+              return true;
+            } catch (signInError) {
+              console.error('❌ Failed to sign in with stored credentials:', signInError);
+              return false;
+            }
+          } else {
+            console.log('⚠️ No stored credentials found');
+            return false;
+          }
+        }
+        
+        console.log('✅ Firebase user is signed in:', currentUser.email);
+        return true;
+        
+      } catch (error) {
+        console.error('❌ Error checking Firebase Auth:', error);
+        return false;
+      }
+    }
+    
+    // Refresh the authentication token
+    async function refreshAuthToken() {
+      console.log('🔄 Refreshing Firebase authentication token...');
+      
+      try {
+        // Get Firebase Auth instance safely
+        let firebaseAuth = null;
+        
+        // Try multiple ways to get Firebase Auth
+        if (window.firebaseAuth) {
+          console.log('✅ Using Firebase Auth from window.firebaseAuth');
+          firebaseAuth = window.firebaseAuth;
+        } else if (window.firebase && typeof window.firebase.auth === 'function') {
+          console.log('✅ Getting Firebase Auth from window.firebase');
+          firebaseAuth = window.firebase.auth();
+          window.firebaseAuth = firebaseAuth; // Store for later use
+        } else if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') {
+          console.log('✅ Getting Firebase Auth from global firebase');
+          firebaseAuth = firebase.auth();
+          window.firebaseAuth = firebaseAuth; // Store for later use
+        } else {
+          console.error('❌ Firebase Auth not available');
+          return null;
+        }
+        
+        if (!firebaseAuth || !firebaseAuth.currentUser) {
+          console.error('❌ Cannot refresh token - no authenticated user');
+          return null;
+        }
+        
+        // Force token refresh
+        const token = await firebaseAuth.currentUser.getIdToken(true);
+        console.log('✅ Successfully refreshed Firebase token');
+        
+        return token;
+        
+      } catch (error) {
+        console.error('❌ Error refreshing Firebase token:', error);
+        return null;
+      }
+    }
+    
+    // Store tokens in localStorage
+    function storeTokens(token) {
+      if (!token) return false;
+      
+      console.log('💾 Storing authentication tokens in localStorage...');
+      
+      try {
+        // Store token in all possible locations
+        localStorage.setItem('jwt_token', token);
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('team_member_token', token);
+        localStorage.setItem('token', token);
+        
+        console.log('✅ Tokens successfully stored in localStorage');
+        return true;
+        
+      } catch (error) {
+        console.error('❌ Error storing tokens:', error);
+        return false;
+      }
+    }
+    
+    // Patch ProjectSelectionService
+    function patchProjectSelectionService() {
+      console.log('🔧 Patching ProjectSelectionService...');
+      
+      try {
+        // Find the projectSelectionService instance
+        let projectService = null;
+        
+        // Check global scope first
+        if (window.projectSelectionService) {
+          console.log('✅ Found projectSelectionService in global scope');
+          projectService = window.projectSelectionService;
+        } else {
+          // Try to find it in the window object
+          for (const key in window) {
+            if (typeof window[key] === 'object' && 
+                window[key] !== null && 
+                typeof window[key].fetchAvailableProjects === 'function') {
+              
+              console.log('✅ Found projectSelectionService as window.' + key);
+              projectService = window[key];
+              break;
+            }
+          }
+        }
+        
+        if (projectService) {
+          // We found the service instance, patch its method
+          const originalMethod = projectService.fetchAvailableProjects;
+          
+          projectService.fetchAvailableProjects = async function() {
+            console.log('🔧 Patched fetchAvailableProjects called');
+            
+            // Check for token and refresh if needed
+            const token = localStorage.getItem('jwt_token') || 
+                         localStorage.getItem('auth_token') || 
+                         localStorage.getItem('team_member_token') || 
+                         localStorage.getItem('token');
+            
+            if (!token) {
+              console.log('⚠️ No token available, attempting to refresh...');
+              
+              // Try to refresh the token
+              let firebaseAuth = null;
+              
+              // Try multiple ways to get Firebase Auth
+              if (window.firebaseAuth) {
+                firebaseAuth = window.firebaseAuth;
+              } else if (window.firebase && typeof window.firebase.auth === 'function') {
+                firebaseAuth = window.firebase.auth();
+                window.firebaseAuth = firebaseAuth; // Store for later use
+              } else if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') {
+                firebaseAuth = firebase.auth();
+                window.firebaseAuth = firebaseAuth; // Store for later use
+              }
+              
+              if (firebaseAuth && firebaseAuth.currentUser) {
+                const newToken = await firebaseAuth.currentUser.getIdToken(true);
+                if (newToken) {
+                  storeTokens(newToken);
+                  console.log('✅ Successfully refreshed and stored token');
+                } else {
+                  console.error('❌ Failed to refresh token');
+                  throw new Error('No authentication token available');
+                }
+              } else {
+                console.error('❌ No Firebase user available to refresh token');
+                throw new Error('No authentication token available');
+              }
+            }
+            
+            try {
+              // Call the original method
+              return await originalMethod.apply(this, arguments);
+            } catch (error) {
+              console.error('❌ Error in patched fetchAvailableProjects:', error);
+              
+              // Try to recover by refreshing token and retrying
+              const refreshedToken = await refreshAuthToken();
+              if (refreshedToken) {
+                storeTokens(refreshedToken);
+                console.log('🔄 Retrying with fresh token...');
+                return await originalMethod.apply(this, arguments);
+              }
+              
+              throw error;
+            }
+          };
+          
+          console.log('✅ Successfully patched projectService.fetchAvailableProjects');
+        } else {
+          console.log('⚠️ Could not find ProjectSelectionService');
+        }
+        
+      } catch (patchError) {
+        console.error('❌ Error patching ProjectSelectionService:', patchError);
+      }
+    }
+    
+    // Main function to run all fixes
+    async function runFixes() {
+      try {
+        // Step 1: Check Firebase Auth
+        const isAuthInitialized = await ensureFirebaseAuth();
+        
+        // Step 2: Refresh token if auth is initialized
+        let token = null;
+        if (isAuthInitialized) {
+          token = await refreshAuthToken();
+        } else {
+          console.log('⚠️ Skipping token refresh - Firebase Auth not initialized');
+        }
+        
+        // Step 3: Store tokens if we got a new one
+        if (token) {
+          storeTokens(token);
+        } else {
+          console.log('⚠️ No token available to store');
+        }
+        
+        // Step 4: Patch ProjectSelectionService
+        patchProjectSelectionService();
+        
+        console.log('✅ WebOnly Authentication Fix completed');
+        
+      } catch (error) {
+        console.error('❌ Error running WebOnly Authentication Fix:', error);
+      }
+    }
+    
+    // Run the fixes
+    runFixes();
+  })();
+  `;
+
+  // Inject the fix script
+  injectScript(fixScript);
+  
+  console.log('✅ Authentication fix injected successfully');
+})();
+        </pre>
+    </div>
+    
+    <div id="status" class="status" style="display: none;"></div>
+    
+    <script>
+        function openWithFix() {
+            const appUrl = document.getElementById('appUrl').value;
+            if (!appUrl) {
+                showStatus('Please enter a valid URL', 'error');
+                return;
+            }
+            
+            try {
+                // Create a new tab with the application URL
+                const newTab = window.open(appUrl, '_blank');
+                
+                // Wait for the page to load, then inject the fix
+                setTimeout(() => {
+                    try {
+                        // Get the code snippet
+                        const codeSnippet = document.getElementById('codeSnippet').textContent;
+                        
+                        // Execute the code in the new tab
+                        newTab.eval(codeSnippet);
+                        
+                        showStatus('Fix injected successfully!', 'success');
+                    } catch (error) {
+                        showStatus('Error injecting fix: ' + error.message, 'error');
+                    }
+                }, 3000); // Wait 3 seconds for the page to load
+                
+            } catch (error) {
+                showStatus('Error opening application: ' + error.message, 'error');
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = 'status ' + type;
+            statusElement.style.display = 'block';
+        }
+        
+        // Copy button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeSnippet = document.getElementById('codeSnippet');
+            const copyButton = document.createElement('button');
+            copyButton.textContent = 'Copy to Clipboard';
+            copyButton.style.position = 'absolute';
+            copyButton.style.top = '10px';
+            copyButton.style.right = '10px';
+            
+            const codeBlockDiv = document.querySelector('.code-block');
+            codeBlockDiv.style.position = 'relative';
+            codeBlockDiv.appendChild(copyButton);
+            
+            copyButton.addEventListener('click', function() {
+                const range = document.createRange();
+                range.selectNode(codeSnippet);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                
+                copyButton.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyButton.textContent = 'Copy to Clipboard';
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>

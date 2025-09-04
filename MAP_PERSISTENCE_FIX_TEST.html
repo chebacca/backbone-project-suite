@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Persistence Fix - Test Instructions</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            color: #2196F3;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #e8f5e8; color: #2e7d32; border-left: 4px solid #4caf50; }
+        .error { background: #ffebee; color: #c62828; border-left: 4px solid #f44336; }
+        .warning { background: #fff3e0; color: #ef6c00; border-left: 4px solid #ff9800; }
+        .info { background: #e3f2fd; color: #1565c0; border-left: 4px solid #2196f3; }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976D2; }
+        .step-number {
+            background: #2196F3;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-header">🗺️ Map Persistence Fix - DEPLOYED ✅</h1>
+        
+        <div class="test-result success">
+            <strong>✅ ISSUE IDENTIFIED:</strong> Map data structure mismatch between save and load operations
+        </div>
+        
+        <div class="test-result success">
+            <strong>✅ FIX APPLIED:</strong> Corrected MapLayout data structure to use proper MapData format
+        </div>
+        
+        <div class="test-result success">
+            <strong>✅ DEPLOYED:</strong> Updated application is live at https://backbone-client.web.app
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-header">🔧 What Was Fixed</h2>
+        
+        <div class="test-result info">
+            <strong>Problem:</strong> The map upload was saving data in the wrong format:
+            <div class="code-block">// ❌ WRONG FORMAT (before fix)
+{
+  id: "map-123",
+  name: "Custom Map",
+  imageUrl: "https://storage.googleapis.com/...", // Wrong location
+  data: "present" // Wrong type
+}</div>
+        </div>
+        
+        <div class="test-result success">
+            <strong>Solution:</strong> Now saves data in the correct MapLayout format:
+            <div class="code-block">// ✅ CORRECT FORMAT (after fix)
+{
+  id: "map-123",
+  name: "Custom Map", 
+  data: {
+    items: [],
+    positions: {},
+    containers: [],
+    customMapImage: "https://storage.googleapis.com/...", // Correct location
+    iconSize: 48
+  }
+}</div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-header">🧪 Testing Instructions</h2>
+        
+        <h3>Step-by-Step Test:</h3>
+        <ol style="list-style: none; padding: 0;">
+            <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="step-number">1</span>
+                <strong>Open Map Page:</strong> Navigate to <a href="https://backbone-client.web.app/inventory/map" target="_blank">https://backbone-client.web.app/inventory/map</a>
+            </li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="step-number">2</span>
+                <strong>Open Browser Console:</strong> Press F12 (or Cmd+Option+I on Mac) to see debug logs
+            </li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="step-number">3</span>
+                <strong>Upload Map Image:</strong> Click the upload button and select an image file
+            </li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="step-number">4</span>
+                <strong>Check Console Logs:</strong> Look for successful save messages:
+                <div class="code-block">🗺️ [InventoryMapSection] Map layout saved to Firestore with organization context: {
+  layoutId: "map-1234567890",
+  organizationId: "your-org-id",
+  projectId: "your-project-id", 
+  imageUrl: "https://firebasestorage.googleapis.com/..."
+}</div>
+            </li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="step-number">5</span>
+                <strong>Refresh Page:</strong> Press F5 or Ctrl+R to reload the page
+            </li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="step-number">6</span>
+                <strong>Verify Persistence:</strong> The map image should still be visible after refresh
+            </li>
+            <li style="padding: 8px 0;">
+                <span class="step-number">7</span>
+                <strong>Check Load Logs:</strong> Look for successful load messages:
+                <div class="code-block">🗺️ [MapPage] Found map layout with image: {
+  layoutId: "map-1234567890",
+  imageUrl: "https://firebasestorage.googleapis.com/...",
+  organizationId: "your-org-id"
+}</div>
+            </li>
+        </ol>
+        
+        <button onclick="openMapPage()">🗺️ Open Map Page</button>
+        <button onclick="openConsole()">🔍 Open Console Instructions</button>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-header">🔍 Troubleshooting</h2>
+        
+        <div class="test-result warning">
+            <strong>If map still doesn't persist:</strong>
+            <ul>
+                <li>Check browser console for authentication errors</li>
+                <li>Verify you're logged in with proper organization credentials</li>
+                <li>Look for Firebase Storage upload errors</li>
+                <li>Check if Firestore save operation completed successfully</li>
+            </ul>
+        </div>
+        
+        <div class="test-result info">
+            <strong>Expected Console Flow:</strong>
+            <ol>
+                <li>🏢 Organization context retrieved</li>
+                <li>📤 Image uploaded to Firebase Storage</li>
+                <li>💾 Map layout saved to Firestore</li>
+                <li>🔄 Page refresh</li>
+                <li>📥 Map layouts loaded from Firestore</li>
+                <li>🖼️ Image displayed from Firebase Storage URL</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-header">📊 Technical Details</h2>
+        
+        <div class="test-result info">
+            <strong>Data Flow:</strong><br>
+            1. <strong>Upload:</strong> InventoryMapSection → Firebase Storage → mapService.saveMapLayout()<br>
+            2. <strong>Save:</strong> MapLayout with proper MapData structure → Firebase Functions → Firestore<br>
+            3. <strong>Load:</strong> MapPage → mapService.getMultiMapData() → Firebase Functions → Firestore<br>
+            4. <strong>Display:</strong> MapData.customMapImage → Image displayed
+        </div>
+        
+        <div class="test-result success">
+            <strong>Tenant Isolation:</strong><br>
+            • Storage Path: <code>organizations/{orgId}/projects/{projectId}/maps/layouts/{layoutId}/</code><br>
+            • Firestore: Organization-scoped collections<br>
+            • Authentication: Firebase ID tokens with organization claims
+        </div>
+    </div>
+
+    <script>
+        function openMapPage() {
+            window.open('https://backbone-client.web.app/inventory/map', '_blank');
+        }
+        
+        function openConsole() {
+            alert('To open browser console:\n\n• Chrome/Firefox: Press F12\n• Mac: Press Cmd+Option+I\n• Safari: Press Cmd+Option+C\n\nThen navigate to the Console tab to see debug logs.');
+        }
+    </script>
+</body>
+</html>

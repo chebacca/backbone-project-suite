@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Clear Browser Cache & LocalStorage</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+        .log {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .hardcoded-sessions {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .session-item {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Clear Browser Cache & LocalStorage</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Warning:</strong> This will clear all localStorage data for this domain, including saved sessions, preferences, and cached data.
+        </div>
+
+        <div class="section">
+            <h3>🔍 Check for Hardcoded Sessions</h3>
+            <p>First, let's check if there are any hardcoded session IDs in localStorage:</p>
+            <button onclick="checkHardcodedSessions()">Check LocalStorage</button>
+            <div id="hardcodedSessionsResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>🧹 Clear Browser Data</h3>
+            <p>Clear different types of browser data:</p>
+            <button onclick="clearLocalStorage()">Clear LocalStorage</button>
+            <button onclick="clearSessionStorage()">Clear SessionStorage</button>
+            <button onclick="clearIndexedDB()">Clear IndexedDB</button>
+            <button onclick="clearCookies()">Clear Cookies</button>
+            <button class="danger" onclick="clearAllData()">Clear All Data</button>
+        </div>
+
+        <div class="section">
+            <h3>🔄 Reload Application</h3>
+            <p>After clearing data, reload the application:</p>
+            <button onclick="reloadApp()">Reload App</button>
+            <button onclick="hardReload()">Hard Reload (Ctrl+Shift+R)</button>
+        </div>
+
+        <div id="log" class="log" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Hardcoded session IDs to check for
+        const HARDCODED_SESSIONS = [
+            '907d6745-7201-44ee-bdab-a5859835a7e1',
+            'fe082bc8-219a-48b5-a81f-c21d6a047b72',
+            'bJmho3tOTL9aydYvAOU0',
+            'yYDDfbLl6ZZOE6OkaChD',
+            'e8559b4f-9524-41f7-95a7-ebd4098bb0d3'
+        ];
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.style.display = 'block';
+            logDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function checkHardcodedSessions() {
+            log('🔍 Checking localStorage for hardcoded sessions...');
+            
+            const resultDiv = document.getElementById('hardcodedSessionsResult');
+            const foundSessions = [];
+            
+            // Check all localStorage keys
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                
+                // Check if the value contains any hardcoded session IDs
+                HARDCODED_SESSIONS.forEach(sessionId => {
+                    if (value && value.includes(sessionId)) {
+                        foundSessions.push({
+                            key: key,
+                            sessionId: sessionId,
+                            value: value.substring(0, 100) + (value.length > 100 ? '...' : '')
+                        });
+                    }
+                });
+            }
+            
+            if (foundSessions.length > 0) {
+                resultDiv.innerHTML = `
+                    <div class="hardcoded-sessions">
+                        <strong>❌ Found ${foundSessions.length} hardcoded session(s) in localStorage:</strong>
+                        ${foundSessions.map(item => `
+                            <div class="session-item">
+                                <strong>Key:</strong> ${item.key}<br>
+                                <strong>Session ID:</strong> ${item.sessionId}<br>
+                                <strong>Value:</strong> ${item.value}
+                            </div>
+                        `).join('')}
+                        <button onclick="removeHardcodedSessions()" style="margin-top: 10px;">Remove These Sessions</button>
+                    </div>
+                `;
+                log(`❌ Found ${foundSessions.length} hardcoded sessions in localStorage`);
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <strong>✅ No hardcoded sessions found in localStorage</strong>
+                    </div>
+                `;
+                log('✅ No hardcoded sessions found in localStorage');
+            }
+        }
+
+        function removeHardcodedSessions() {
+            log('🗑️ Removing hardcoded sessions from localStorage...');
+            
+            let removedCount = 0;
+            const keysToRemove = [];
+            
+            // Find keys that contain hardcoded sessions
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                
+                HARDCODED_SESSIONS.forEach(sessionId => {
+                    if (value && value.includes(sessionId)) {
+                        keysToRemove.push(key);
+                    }
+                });
+            }
+            
+            // Remove the keys
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                removedCount++;
+                log(`🗑️ Removed localStorage key: ${key}`);
+            });
+            
+            log(`✅ Removed ${removedCount} items containing hardcoded sessions`);
+            
+            // Re-check
+            setTimeout(checkHardcodedSessions, 500);
+        }
+
+        function clearLocalStorage() {
+            log('🧹 Clearing localStorage...');
+            const itemCount = localStorage.length;
+            localStorage.clear();
+            log(`✅ Cleared ${itemCount} items from localStorage`);
+        }
+
+        function clearSessionStorage() {
+            log('🧹 Clearing sessionStorage...');
+            const itemCount = sessionStorage.length;
+            sessionStorage.clear();
+            log(`✅ Cleared ${itemCount} items from sessionStorage`);
+        }
+
+        async function clearIndexedDB() {
+            log('🧹 Clearing IndexedDB...');
+            try {
+                const databases = await indexedDB.databases();
+                await Promise.all(
+                    databases.map(db => {
+                        return new Promise((resolve, reject) => {
+                            const deleteReq = indexedDB.deleteDatabase(db.name);
+                            deleteReq.onsuccess = () => resolve(db.name);
+                            deleteReq.onerror = () => reject(deleteReq.error);
+                        });
+                    })
+                );
+                log(`✅ Cleared ${databases.length} IndexedDB databases`);
+            } catch (error) {
+                log(`❌ Error clearing IndexedDB: ${error.message}`);
+            }
+        }
+
+        function clearCookies() {
+            log('🧹 Clearing cookies...');
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            log('✅ Cleared cookies');
+        }
+
+        async function clearAllData() {
+            log('🧹 Clearing ALL browser data...');
+            clearLocalStorage();
+            clearSessionStorage();
+            await clearIndexedDB();
+            clearCookies();
+            log('✅ All browser data cleared');
+        }
+
+        function reloadApp() {
+            log('🔄 Reloading application...');
+            window.location.reload();
+        }
+
+        function hardReload() {
+            log('🔄 Performing hard reload...');
+            window.location.reload(true);
+        }
+
+        // Auto-check on page load
+        window.addEventListener('load', function() {
+            log('🚀 Page loaded, checking for hardcoded sessions...');
+            checkHardcodedSessions();
+        });
+    </script>
+</body>
+</html>

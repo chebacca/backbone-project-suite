@@ -1,0 +1,33 @@
+{
+  "name": "user-registration-test",
+  "version": "1.0.0",
+  "description": "Comprehensive test for user registration flow including Firebase Auth, Firestore, 2FA, and subscription creation",
+  "main": "test-user-registration-flow.js",
+  "scripts": {
+    "test": "node test-user-registration-flow.js",
+    "test:clean": "node test-user-registration-flow.js --cleanup-only"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "axios": "^1.6.0",
+    "speakeasy": "^2.0.0",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "@types/speakeasy": "^2.0.0",
+    "@types/qrcode": "^1.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "firebase",
+    "authentication",
+    "firestore",
+    "testing",
+    "user-registration",
+    "2fa"
+  ],
+  "author": "Backbone Logic",
+  "license": "MIT"
+}

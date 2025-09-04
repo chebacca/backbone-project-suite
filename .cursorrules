@@ -1,0 +1,159 @@
+# BACKBONE v14.2 Project Rules
+
+## 🔥 CRITICAL: WEB-ONLY FIREBASE PROJECT
+This is a **WEB-ONLY** project that deploys to Firebase hosting. 
+**DO NOT** attempt to run local development servers or Docker containers.
+
+### Deployment Architecture
+- **Frontend**: Static files deployed to Firebase Hosting (backbone-client.web.app)
+- **Backend**: Firebase Functions + Firestore (web-only mode)
+- **Package Manager**: npm (not pnpm for this project)
+- **Build Process**: esbuild → Firebase-ready static files
+
+### ✅ PRODUCTION DEPLOYMENT STATUS
+- **Successfully Deployed**: December 2024
+- **Web App URL**: https://backbone-client.web.app
+- **API Base URL**: https://api-oup5qxogca-uc.a.run.app
+- **Firebase Project**: backbone-logic
+- **Hosting Target**: backbone-client (main web app)
+- **Secondary Target**: backbone-logic (licensing website)
+
+### Key Commands
+```bash
+# Build web application (from project root)
+cd Dashboard-v14_2/apps/web && npm run build
+
+# Deploy to Firebase (from Dashboard-v14_2 directory)
+cd Dashboard-v14_2 && firebase deploy --only hosting
+
+# Deploy both hosting and functions
+cd Dashboard-v14_2 && firebase deploy --only hosting,functions
+
+# Health check
+curl https://us-central1-backbone-logic.cloudfunctions.net/healthCheck
+```
+
+### 🚨 CRITICAL: Correct Directory Structure for Commands
+- **Build Command**: Must run from `Dashboard-v14_2/apps/web/` directory
+- **Deploy Command**: Must run from `Dashboard-v14_2/` directory (NOT from apps/web/)
+- **Firebase Config**: Located in `Dashboard-v14_2/firebase.json`
+- **Public Directory**: Created at `Dashboard-v14_2/apps/web/public/` after build
+
+### 📁 Working Directory Management
+```bash
+# Always start from project root
+cd "/Users/chebrooks/Documents/IDE_Project/BACKBONE 14_2 & Website 2 full project files"
+
+# For building (navigate to web app)
+cd Dashboard-v14_2/apps/web && npm run build
+
+# For deploying (navigate back to Dashboard-v14_2)
+cd ../../ && firebase deploy --only hosting
+
+# Alternative: Use absolute paths to avoid confusion
+cd "/Users/chebrooks/Documents/IDE_Project/BACKBONE 14_2 & Website 2 full project files/Dashboard-v14_2/apps/web" && npm run build
+cd "/Users/chebrooks/Documents/IDE_Project/BACKBONE 14_2 & Website 2 full project files/Dashboard-v14_2" && firebase deploy --only hosting
+```
+
+### ⚠️ Common Path Issues to Avoid
+- ❌ Running `firebase deploy` from `apps/web/` directory (firebase.json not found)
+- ❌ Running `npm run build` from `Dashboard-v14_2/` directory (package.json not found)
+- ❌ Using relative paths without proper navigation
+- ❌ Forgetting to navigate back to correct directory after build
+
+### 🎯 Firebase Hosting Configuration
+```json
+// firebase.json structure
+{
+  "hosting": [
+    {
+      "target": "backbone-client",
+      "public": "apps/web/public",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    }
+  ]
+}
+```
+
+### 🚀 Deployment Targets
+- **Primary**: `backbone-client` → https://backbone-client.web.app (main dashboard)
+- **Secondary**: `backbone-logic` → https://backbone-logic.web.app (licensing website)
+- **Functions**: Deploy to `us-central1` region
+
+### What NOT to do
+- ❌ Do not run `npm run dev` or development servers
+- ❌ Do not attempt Docker deployments
+- ❌ Do not try to start local backend services
+- ❌ Do not use localhost URLs in production
+
+### Project Structure
+- `Dashboard-v14_2/` - Main web application (Firebase-ready)
+- `dashboard-v14-licensing-website 2/` - Licensing website
+- `shared-mpc-library/` - Documentation & best practices
+- `deployment/` - Firebase deployment scripts
+- `public/` - Firebase hosting directory (created by build)
+
+### Authentication & Services
+- Firebase Authentication (web-only)
+- Firestore for data storage
+- Firebase Functions for backend logic
+- All services configured for web-only production mode
+
+### Build Issues
+- If encountering "require is not defined" errors, the require polyfill is already in place
+- Use browser-compatible imports only
+- No bundling needed - Firebase hosting serves ES modules directly
+
+### 🔧 COMPLETE FIREBASE FUNCTIONS IMPLEMENTATION
+All backend API endpoints are implemented and deployed:
+- **Authentication**: Login, register, user management
+- **Team Members**: Full CRUD with project assignments
+- **Organizations**: Multi-tenant organization management
+- **Projects & Sessions**: Complete project lifecycle
+- **AI Integration**: Gemini API and AI agents
+- **Licensing**: License validation and subscriptions
+- **Payments**: Stripe integration for subscriptions
+- **Media**: File upload and management
+- **Reports**: Analytics and reporting system
+- **Utilities**: Health checks, migrations, cleanup
+
+### 🛡️ SECURITY & ACCESS CONTROL
+- Firebase Auth token verification on all endpoints
+- Organization-based data isolation
+- Role-based access control (admin, member, viewer)
+- Firestore security rules for all collections
+- Input validation and sanitization
+
+### 📋 API ENDPOINT PATTERNS
+```typescript
+// Authentication required for all /api/* endpoints
+Authorization: Bearer <firebase-id-token>
+
+// Consistent error response format
+{
+  success: false,
+  error: "Human readable message",
+  errorDetails: "Technical details"
+}
+
+// Success response format
+{
+  success: true,
+  data: { ... }
+}
+```
+
+### 📝 File Naming Conventions
+- **Firebase Scripts**: Always use `.cjs` extension for Firebase-related scripts
+- **Node.js Scripts**: Use `.cjs` for CommonJS modules that need to run in Node.js environment
+- **Firebase Functions**: Use `.js` or `.ts` as appropriate for function code
+- **Configuration Files**: Use `.json` for Firebase config files
+
+### Consulting MPC Library
+Always reference the shared-mpc-library for:
+- Complete Firebase Functions implementation details
+- Firebase deployment patterns
+- Web-only authentication flows
+- Production build configurations
+- Error handling best practices
+- API integration patterns

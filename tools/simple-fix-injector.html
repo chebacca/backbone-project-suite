@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Authentication Fix</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .button-container {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            position: relative;
+        }
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .copy-button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Authentication Fix for WebOnly Mode</h1>
+    
+    <p>This tool helps fix the "No authentication token available" error in web-only mode.</p>
+    
+    <h2>Option 1: Copy and Paste into Console</h2>
+    <p>Copy the code below and paste it into your browser's developer console while on your application page:</p>
+    
+    <div class="code-block">
+        <button class="copy-button" onclick="copyToClipboard('codeSnippet')">Copy</button>
+        <pre id="codeSnippet">/**
+ * Simple Authentication Fix for WebOnly Mode
+ */
+(async function() {
+  console.log('🔧 Starting Simple Authentication Fix...');
+  
+  // Step 1: Find Firebase Auth instance
+  async function findFirebaseAuth() {
+    console.log('🔍 Looking for Firebase Auth...');
+    
+    // Try multiple ways to get Firebase Auth
+    if (window.firebaseAuth) {
+      console.log('✅ Found Firebase Auth in window.firebaseAuth');
+      return window.firebaseAuth;
+    }
+    
+    if (window.firebase && typeof window.firebase.auth === 'function') {
+      console.log('✅ Getting Firebase Auth from window.firebase');
+      const auth = window.firebase.auth();
+      window.firebaseAuth = auth; // Store for later use
+      return auth;
+    }
+    
+    if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') {
+      console.log('✅ Getting Firebase Auth from global firebase');
+      const auth = firebase.auth();
+      window.firebaseAuth = auth; // Store for later use
+      return auth;
+    }
+    
+    // Try to get from firebaseApp if available
+    if (window.firebaseApp) {
+      try {
+        const { getAuth } = await import('firebase/auth');
+        const auth = getAuth(window.firebaseApp);
+        window.firebaseAuth = auth;
+        console.log('✅ Got Firebase Auth from firebaseApp');
+        return auth;
+      } catch (e) {
+        console.error('❌ Error getting auth from firebaseApp:', e);
+      }
+    }
+    
+    console.error('❌ Firebase Auth not found');
+    return null;
+  }
+  
+  // Step 2: Refresh token
+  async function refreshToken(auth) {
+    if (!auth || !auth.currentUser) {
+      console.error('❌ No authenticated user found');
+      return null;
+    }
+    
+    try {
+      console.log('🔄 Refreshing token...');
+      const token = await auth.currentUser.getIdToken(true);
+      console.log('✅ Token refreshed successfully');
+      return token;
+    } catch (e) {
+      console.error('❌ Error refreshing token:', e);
+      return null;
+    }
+  }
+  
+  // Step 3: Store token in all locations
+  function storeToken(token) {
+    if (!token) {
+      console.error('❌ No token to store');
+      return false;
+    }
+    
+    try {
+      console.log('💾 Storing token in all locations...');
+      
+      // Store in localStorage
+      localStorage.setItem('jwt_token', token);
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('team_member_token', token);
+      localStorage.setItem('token', token);
+      
+      // Store in sessionStorage for redundancy
+      try {
+        sessionStorage.setItem('jwt_token', token);
+        sessionStorage.setItem('auth_token', token);
+      } catch (e) {
+        // Ignore sessionStorage errors
+      }
+      
+      // Update JWT service if available
+      if (window.jwtService && typeof window.jwtService.setToken === 'function') {
+        window.jwtService.setToken(token);
+      }
+      
+      console.log('✅ Token stored successfully');
+      return true;
+    } catch (e) {
+      console.error('❌ Error storing token:', e);
+      return false;
+    }
+  }
+  
+  // Step 4: Patch ProjectSelectionService
+  function patchProjectSelectionService() {
+    console.log('🔧 Looking for ProjectSelectionService...');
+    
+    // Find the service
+    let service = null;
+    
+    if (window.projectSelectionService) {
+      console.log('✅ Found projectSelectionService in window');
+      service = window.projectSelectionService;
+    } else {
+      // Look for it in window properties
+      for (const key in window) {
+        if (typeof window[key] === 'object' && 
+            window[key] !== null && 
+            typeof window[key].fetchAvailableProjects === 'function') {
+          console.log('✅ Found projectSelectionService as window.' + key);
+          service = window[key];
+          break;
+        }
+      }
+    }
+    
+    if (!service) {
+      console.log('⚠️ ProjectSelectionService not found');
+      return false;
+    }
+    
+    // Patch the method
+    try {
+      console.log('🔧 Patching fetchAvailableProjects method...');
+      
+      const originalMethod = service.fetchAvailableProjects;
+      
+      service.fetchAvailableProjects = async function() {
+        console.log('🔧 Patched fetchAvailableProjects called');
+        
+        // Check for token
+        const token = localStorage.getItem('jwt_token') || 
+                     localStorage.getItem('auth_token') || 
+                     localStorage.getItem('team_member_token') || 
+                     localStorage.getItem('token');
+        
+        if (!token) {
+          console.log('⚠️ No token found, refreshing...');
+          
+          // Find auth and refresh token
+          const auth = await findFirebaseAuth();
+          if (auth) {
+            const newToken = await refreshToken(auth);
+            if (newToken) {
+              storeToken(newToken);
+            } else {
+              throw new Error('No authentication token available');
+            }
+          } else {
+            throw new Error('No authentication token available');
+          }
+        }
+        
+        try {
+          // Call original method
+          return await originalMethod.apply(this, arguments);
+        } catch (error) {
+          console.error('❌ Error in original method:', error);
+          
+          // Try to recover
+          const auth = await findFirebaseAuth();
+          if (auth) {
+            const newToken = await refreshToken(auth);
+            if (newToken) {
+              storeToken(newToken);
+              // Retry
+              return await originalMethod.apply(this, arguments);
+            }
+          }
+          
+          throw error;
+        }
+      };
+      
+      console.log('✅ Successfully patched fetchAvailableProjects');
+      return true;
+    } catch (e) {
+      console.error('❌ Error patching ProjectSelectionService:', e);
+      return false;
+    }
+  }
+  
+  // Run the fix
+  try {
+    // Step 1: Find Firebase Auth
+    const auth = await findFirebaseAuth();
+    
+    // Step 2: Refresh token
+    let token = null;
+    if (auth) {
+      token = await refreshToken(auth);
+    }
+    
+    // Step 3: Store token
+    if (token) {
+      storeToken(token);
+    }
+    
+    // Step 4: Patch ProjectSelectionService
+    patchProjectSelectionService();
+    
+    console.log('✅ Authentication fix completed');
+    
+    // Try to force refresh projects if WebOnlyStartupFlow is found
+    for (const key in window) {
+      if (typeof window[key] === 'object' && 
+          window[key] !== null && 
+          typeof window[key].state === 'object' && 
+          window[key].state !== null &&
+          typeof window[key].state.projects !== 'undefined' &&
+          typeof window[key].fetchProjects === 'function') {
+        
+        console.log('✅ Found WebOnlyStartupFlow component, refreshing projects...');
+        setTimeout(() => {
+          try {
+            window[key].fetchProjects();
+          } catch (e) {
+            console.error('❌ Error refreshing projects:', e);
+          }
+        }, 1000);
+        
+        break;
+      }
+    }
+    
+  } catch (e) {
+    console.error('❌ Error running authentication fix:', e);
+  }
+})();</pre>
+    </div>
+    
+    <h2>Option 2: Open Application with Fix</h2>
+    <p>Enter your application URL below and click the button to open it with the fix applied:</p>
+    
+    <div class="button-container">
+        <input type="text" id="appUrl" placeholder="Enter your application URL" style="padding: 10px; width: 70%;" value="https://backbone-client.web.app/">
+        <button onclick="openWithFix()">Open with Fix</button>
+    </div>
+    
+    <h2>Option 3: Create Bookmarklet</h2>
+    <p>Drag this link to your bookmarks bar to create a bookmarklet that applies the fix when clicked:</p>
+    
+    <div class="button-container">
+        <a href="#" id="bookmarklet" style="padding: 10px; background-color: #f0f0f0; border-radius: 5px; text-decoration: none; color: #333; border: 1px solid #ccc;">Auth Fix</a>
+        <p><small>(Drag this to your bookmarks bar)</small></p>
+    </div>
+    
+    <script>
+        // Function to copy code to clipboard
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const range = document.createRange();
+            range.selectNode(element);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            
+            const button = document.querySelector('.copy-button');
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
+        
+        // Function to open application with fix
+        function openWithFix() {
+            const appUrl = document.getElementById('appUrl').value;
+            if (!appUrl) {
+                alert('Please enter a valid URL');
+                return;
+            }
+            
+            // Get the code
+            const code = document.getElementById('codeSnippet').textContent;
+            
+            // Create a new window with the application
+            const newWindow = window.open(appUrl, '_blank');
+            
+            // Wait for the page to load, then inject the code
+            setTimeout(() => {
+                try {
+                    newWindow.eval(code);
+                } catch (e) {
+                    alert('Error injecting fix: ' + e.message);
+                }
+            }, 5000);
+        }
+        
+        // Create bookmarklet
+        document.addEventListener('DOMContentLoaded', function() {
+            const code = document.getElementById('codeSnippet').textContent;
+            const compressedCode = code.replace(/\s+/g, ' ');
+            const bookmarkletCode = `javascript:(${compressedCode})()`;
+            document.getElementById('bookmarklet').href = bookmarkletCode;
+        });
+        
+        // Initialize bookmarklet on page load
+        window.onload = function() {
+            const code = document.getElementById('codeSnippet').textContent;
+            const compressedCode = code.replace(/\s+/g, ' ');
+            const bookmarkletCode = `javascript:(${compressedCode})()`;
+            document.getElementById('bookmarklet').href = bookmarkletCode;
+        };
+    </script>
+</body>
+</html>
