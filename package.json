@@ -39,6 +39,7 @@
     "health": "curl https://us-central1-backbone-logic.cloudfunctions.net/api/health"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "firebase-admin": "^13.5.0"
   },
   "devDependencies": {

@@ -49,7 +49,7 @@
       ]
     },
     {
-      "target": "licensing",
+      "target": "backbone-logic",
       "public": "dashboard-v14-licensing-website 2/deploy",
       "ignore": [
         "firebase.json",
@@ -78,8 +78,8 @@
     ]
   },
   "firestore": {
-    "rules": "firestore-comprehensive.rules",
-    "indexes": "firestore-comprehensive.indexes.json"
+    "rules": "Dashboard-v14_2/firestore-comprehensive.rules",
+    "indexes": "Dashboard-v14_2/firestore-comprehensive.indexes.json"
   },
   "storage": {
     "rules": "storage.rules"

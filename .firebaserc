@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "backbone-logic": {
+      "hosting": {
+        "backbone-logic": [
+          "backbone-logic"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
