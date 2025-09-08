@@ -130,7 +130,7 @@ function checkSessionServices() {
   const serviceFiles = [
     '../Dashboard-v14_2/apps/web/src/services/sessionsService.ts',
     '../Dashboard-v14_2/apps/web/src/services/sessionWorkflowIntegration.ts',
-    '../Dashboard-v14_2/apps/web/src/services/webOnlyDataRouter.ts'
+    '../Dashboard-v14_2/functions/src/index.ts'
   ];
   
   serviceFiles.forEach(serviceFile => {

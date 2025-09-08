@@ -113,7 +113,7 @@ This analysis traces all authentication files and components in the BACKBONE v14
 
 ## 🌐 Web-Only Data Router
 
-### **Location**: `Dashboard-v14_2/apps/web/src/services/webOnlyDataRouter.ts`
+### **Location**: `Dashboard-v14_2/apps/web/src/services/UnifiedApiClient.ts` (Firebase Functions)
 - **Purpose**: Handles all API requests in web-only mode
 - **Features**:
   - Intercepts axios requests
