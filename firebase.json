@@ -2,7 +2,7 @@
   "hosting": [
     {
       "target": "backbone-client",
-      "public": "apps/web/public",
+      "public": "Dashboard-v14_2/apps/web/public",
       "ignore": [
         "firebase.json",
         "**/.*",

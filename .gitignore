@@ -276,3 +276,6 @@ dataconnect-generated/
 # ============================================================================
 # Keep individual project .gitignore files active
 # This root .gitignore supplements but doesn't override them
+
+# Firestore automation reports
+tools/firestore-automation/reports/

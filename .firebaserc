@@ -5,6 +5,9 @@
       "hosting": {
         "backbone-logic": [
           "backbone-logic"
+        ],
+        "backbone-client": [
+          "backbone-client"
         ]
       }
     }

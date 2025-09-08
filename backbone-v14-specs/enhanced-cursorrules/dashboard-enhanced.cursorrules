@@ -1,0 +1,369 @@
+# 🔥 BACKBONE v14.2 Dashboard Enhanced .cursorrules
+# Based on Real Codebase Analysis - Optimized for Claude Coding
+
+## 🎯 **PROJECT CONTEXT**
+This is the BACKBONE v14.2 Dashboard - a Firebase Web-Only production application with Mode Awareness System.
+- **Live URL**: https://backbone-client.web.app
+- **Architecture**: React 18 + TypeScript + Firebase Functions + Firestore
+- **Deployment**: Firebase Hosting (Web-Only, NO local servers)
+- **Codebase Size**: 13,000+ line components, 2,300+ line Firebase Functions
+
+## 🏗️ **REAL CODEBASE PATTERNS** (Based on Actual Analysis)
+
+### **Large Component Architecture (1,000+ lines)**
+```typescript
+// REAL EXAMPLE: InventoryPage.tsx (13,623 lines), NewLayout.tsx (2,744 lines)
+const LargeFeatureComponent: React.FC = () => {
+  // 1. State Management (Lines 1-200)
+  const [activeView, setActiveView] = useState<ViewType>('overview');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 2. MANDATORY Context Integration
+  const theme = useTheme();
+  const { mode, customizations } = useEnhancedThemeMode();
+  const { user, organizationId } = useAuth();
+  
+  // 3. MANDATORY Firebase Service Integration
+  const fetchData = useCallback(async () => {
+    const token = jwtService.getToken();
+    const response = await apiClient.get('/api/endpoint', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }, [organizationId]);
+  
+  // 4. Render Helpers (Lines 800-1000+)
+  const renderHeader = () => (/* JSX */);
+  const renderContent = () => (/* JSX */);
+  
+  return (
+    <Box sx={{
+      backgroundColor: theme.palette.background.paper,
+      borderRadius: theme.shape.borderRadius,
+      padding: theme.spacing(2)
+    }}>
+      {renderHeader()}
+      {renderContent()}
+    </Box>
+  );
+};
+```
+
+### **Firebase Functions Pattern (2,300+ lines)**
+```typescript
+// REAL EXAMPLE: functions/src/index.ts (2,318 lines)
+// 1. MANDATORY Security Helpers
+function getHierarchyFromRole(role: string): number {
+  const roleHierarchy: Record<string, number> = {
+    'SUPERADMIN': 100, 'ADMIN': 100, 'admin': 90, 'owner': 100,
+    'MANAGER': 80, 'POST_COORDINATOR': 70, 'PRODUCER': 65,
+    'EDITOR': 60, 'member': 50, 'viewer': 10, 'USER': 30, 'GUEST': 10
+  };
+  return roleHierarchy[role] || 30;
+}
+
+// 2. MANDATORY Authentication Middleware
+const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  const token = authHeader.split(' ')[1];
+  const decodedToken = await admin.auth().verifyIdToken(token);
+  req.user = decodedToken;
+  next();
+};
+
+// 3. MANDATORY Organization Validation
+const validateOrganization = async (req: Request, res: Response, next: NextFunction) => {
+  const userOrg = await getUserOrganization(req.user.uid);
+  if (!userOrg) {
+    return res.status(403).json({ success: false, error: 'No organization access' });
+  }
+  req.user.organizationId = userOrg.id;
+  next();
+};
+
+// 4. API Endpoint Pattern
+app.get('/api/endpoint', authenticateToken, validateOrganization, async (req, res) => {
+  try {
+    const data = await db.collection('collection')
+      .where('organizationId', '==', req.user.organizationId)
+      .get();
+    res.json({ success: true, data: data.docs.map(doc => ({ id: doc.id, ...doc.data() })) });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+```
+
+## 🔒 **MANDATORY SECURITY PATTERNS**
+
+### **Authentication (EVERY API Call)**
+```typescript
+// ALWAYS include in service calls
+const token = jwtService.getToken();
+const config = {
+  headers: { Authorization: `Bearer ${token}` }
+};
+```
+
+### **Organization Scoping (EVERY Query)**
+```typescript
+// ALWAYS scope data to organization
+const data = await db.collection('collection')
+  .where('organizationId', '==', organizationId)
+  .get();
+```
+
+### **Hierarchy-Based Access Control**
+```typescript
+// REAL EXAMPLE: routes/index.tsx (217 lines)
+<Route path="/contacts" element={
+  <HierarchyGuard minimumLevel={30}>
+    <ContactsPage />
+  </HierarchyGuard>
+} />
+<Route path="/inventory" element={
+  <HierarchyGuard minimumLevel={40}>
+    <InventoryPage />
+  </HierarchyGuard>
+} />
+<Route path="/admin/users" element={
+  <HierarchyGuard minimumLevel={90}>
+    <UserManagementPage />
+  </HierarchyGuard>
+} />
+```
+
+## 🎨 **MANDATORY THEME INTEGRATION**
+
+### **ALWAYS Include Both Theme Hooks**
+```typescript
+const Component: React.FC = () => {
+  const theme = useTheme();
+  const { mode, customizations } = useEnhancedThemeMode();
+  
+  return (
+    <Box sx={{
+      backgroundColor: theme.palette.background.paper,
+      borderRadius: theme.shape.borderRadius,
+      padding: theme.spacing(2),
+      border: `1px solid ${theme.palette.divider}`
+    }}>
+      Content
+    </Box>
+  );
+};
+```
+
+## 🔄 **MODE AWARENESS SYSTEM**
+
+### **Mode-Aware Components**
+```typescript
+// REAL EXAMPLE: ModeAwareRouter.tsx (585 lines)
+const ModeAwareComponent: React.FC<{ requiredMode?: 'standalone' | 'shared_network' }> = ({ 
+  requiredMode, children 
+}) => {
+  const { currentMode, switchMode } = useModeAwareness();
+  
+  if (requiredMode && currentMode !== requiredMode) {
+    return (
+      <Box sx={{ textAlign: 'center', p: 3 }}>
+        <Typography variant="h5">Mode Switch Required</Typography>
+        <Button onClick={() => switchMode(requiredMode)}>
+          Switch to {requiredMode} Mode
+        </Button>
+      </Box>
+    );
+  }
+  
+  return <>{children}</>;
+};
+```
+
+### **Mode-Aware Routing**
+```typescript
+<Route path="/projects/new/standalone" element={
+  <ProtectedRoute requiredMode="standalone">
+    <AppLayout><CreateProjectPage /></AppLayout>
+  </ProtectedRoute>
+} />
+```
+
+## 🚀 **FIREBASE WEB-ONLY DEPLOYMENT**
+
+### **CRITICAL: Web-Only Architecture**
+- ❌ NO local development servers in production
+- ❌ NO Docker containers
+- ✅ Firebase Hosting + Functions + Firestore ONLY
+- ✅ Use getApiBaseUrl() utility (NO hardcoded URLs)
+
+### **Build & Deploy Commands**
+```bash
+# Build (from apps/web directory)
+cd Dashboard-v14_2/apps/web && npm run build
+
+# Deploy (from Dashboard-v14_2 directory)  
+cd Dashboard-v14_2 && firebase deploy --only hosting
+```
+
+## 📋 **COMPONENT CREATION CHECKLIST**
+
+### **MANDATORY for ALL Components**
+1. **Authentication Integration**
+   ```typescript
+   const token = jwtService.getToken();
+   config.headers.Authorization = `Bearer ${token}`;
+   ```
+
+2. **Theme Integration**
+   ```typescript
+   const theme = useTheme();
+   const { mode, customizations } = useEnhancedThemeMode();
+   ```
+
+3. **Organization Scoping**
+   ```typescript
+   .where('organizationId', '==', organizationId)
+   ```
+
+4. **Error Handling**
+   ```typescript
+   try {
+     // operation
+   } catch (error) {
+     console.error(error);
+     setError(error.message);
+   }
+   ```
+
+5. **TypeScript Interfaces**
+   ```typescript
+   interface ComponentProps {
+     // Proper type definitions
+   }
+   ```
+
+## 🎯 **REAL FILE STRUCTURE PATTERNS**
+
+### **Feature Organization (Actual Structure)**
+```
+Dashboard-v14_2/apps/web/src/features/
+├── sessions/                    # 27 files
+│   ├── components/
+│   │   ├── unified-workflow/UnifiedWorkflowManager.tsx (486 lines)
+│   │   └── ConsolidatedSessionsList.tsx
+│   └── pages/ProjectSessionsPage.tsx (525 lines)
+├── Inventory/                   # 7 files  
+│   ├── InventoryPage.tsx (13,623 lines)
+│   ├── CreateAssetModal.tsx (1,142 lines)
+│   └── MultiAssetInputModal.tsx (1,892 lines)
+├── client/
+│   ├── components/Layout/NewLayout.tsx (2,744 lines)
+│   └── pages/Notes.tsx (1,529 lines)
+└── daily-callsheets/
+    └── components/DailyCallSheetDashboard.tsx (524 lines)
+```
+
+### **Service Layer Pattern**
+```typescript
+class FeatureService {
+  private baseURL = getApiBaseUrl(); // MANDATORY: Use unified utility
+  
+  async getAll(): Promise<FeatureItem[]> {
+    const token = jwtService.getToken();
+    const response = await apiClient.get(`${this.baseURL}/api/feature`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+  }
+}
+```
+
+## 🔍 **REAL API ENDPOINTS** (From functions/src/index.ts)
+
+### **Complete Endpoint List**
+```typescript
+// Authentication (Lines 85-200)
+POST /auth/login, /auth/register, /auth/logout
+GET  /auth/me
+PUT  /auth/me
+
+// Team Members (Lines 200-400)  
+GET  /team-members
+POST /team-members
+GET  /team-members/:id
+PUT  /team-members/:id
+DELETE /team-members/:id
+
+// Projects (Lines 600-800)
+GET  /projects
+POST /projects  
+GET  /projects/:id
+PUT  /projects/:id
+DELETE /projects/:id
+
+// Sessions (Lines 800-1000)
+GET  /sessions
+POST /sessions
+GET  /sessions/:id
+PUT  /sessions/:id
+
+// Inventory (Lines 1000-1200)
+GET  /inventory
+POST /inventory
+GET  /inventory/:id
+PUT  /inventory/:id
+DELETE /inventory/:id
+
+// Global Search (Lines 1800-2000)
+GET  /comprehensive-search    # Searches 52 collections
+GET  /global-search
+```
+
+## ⚠️ **CRITICAL ERROR PREVENTION**
+
+### **NEVER Do These**
+- ❌ Use hardcoded URLs (use getApiBaseUrl())
+- ❌ Skip authentication headers
+- ❌ Skip organization scoping
+- ❌ Use 'any' types
+- ❌ Skip theme integration
+- ❌ Create API calls without error handling
+- ❌ Skip hierarchy validation for protected routes
+
+### **ALWAYS Do These**
+- ✅ Include jwtService.getToken() for auth
+- ✅ Use theme.palette and theme.spacing
+- ✅ Include organizationId in all queries
+- ✅ Add proper TypeScript interfaces
+- ✅ Include try-catch blocks
+- ✅ Use HierarchyGuard for protected routes
+- ✅ Follow large component patterns for 1,000+ line files
+
+## 📊 **PERFORMANCE PATTERNS**
+
+### **Large Component Management**
+- Use section comments for 1,000+ line components
+- Break into render helper functions
+- Use useCallback for event handlers
+- Implement lazy loading for page components
+
+### **Firebase Optimization**
+- Always include organization scoping
+- Use proper Firestore indexes
+- Implement pagination for large datasets
+- Use real-time listeners efficiently
+
+## 🎮 **DEVELOPMENT WORKFLOW**
+
+1. **Always start with authentication check**
+2. **Include theme integration from the beginning**
+3. **Add organization scoping to all data operations**
+4. **Implement hierarchy-based access control**
+5. **Follow large component patterns for complex features**
+6. **Test with Firebase emulators before deployment**
+7. **Deploy using Firebase Web-Only commands**
+
+This enhanced .cursorrules file is based on comprehensive analysis of the actual BACKBONE v14.2 codebase and provides real patterns found in production code.

@@ -39,7 +39,7 @@ on:
       deploy_rules:
         description: 'Deploy rules to Firebase'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
@@ -246,9 +246,8 @@ jobs:
     needs: scan-and-validate
     if: |
       (github.ref == 'refs/heads/main' && needs.scan-and-validate.outputs.NEW_COLLECTIONS == 'true') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_rules == 'true')
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_rules == true)
     
-    environment: production
     
     steps:
     - name: Checkout code

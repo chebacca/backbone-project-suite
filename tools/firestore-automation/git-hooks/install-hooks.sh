@@ -125,3 +125,4 @@ echo -e "  • Generate rules: ${YELLOW}node tools/firestore-automation/collecti
 echo -e "  • Deploy rules: ${YELLOW}node tools/firestore-automation/collection-scanner.js --generate-rules --deploy${NC}"
 echo ""
 echo -e "${GREEN}✅ Your Firestore collections and rules will now stay automatically synchronized!${NC}"
+
