@@ -1,0 +1,48 @@
+{
+  "name": "firestore-automation",
+  "version": "1.0.0",
+  "description": "Automated Firestore collection scanning and security rules generation for BACKBONE v14.2",
+  "main": "collection-scanner.js",
+  "scripts": {
+    "scan": "node collection-scanner.js",
+    "scan:verbose": "node collection-scanner.js --verbose",
+    "generate-rules": "node collection-scanner.js --generate-rules",
+    "deploy": "node collection-scanner.js --generate-rules --deploy",
+    "monitor": "node monitoring/permission-monitor.js",
+    "monitor:continuous": "node monitoring/permission-monitor.js --continuous",
+    "install-hooks": "./git-hooks/install-hooks.sh",
+    "test": "node collection-scanner.js --verbose && echo 'Collection scanner test passed'",
+    "validate-rules": "cd ../../Dashboard-v14_2 && firebase firestore:rules --project backbone-logic --dry-run",
+    "backup-rules": "cp ../../Dashboard-v14_2/firestore-comprehensive.rules ../../Dashboard-v14_2/firestore-comprehensive.rules.backup.$(date +%s)",
+    "clean-reports": "rm -rf reports/*.json reports/*.md",
+    "clean-logs": "rm -rf logs/*.log alerts/*.json"
+  },
+  "keywords": [
+    "firestore",
+    "security",
+    "automation",
+    "firebase",
+    "rules",
+    "collections",
+    "backbone"
+  ],
+  "author": "BACKBONE Development Team",
+  "license": "MIT",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/backbone-v14.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/backbone-v14/issues"
+  },
+  "homepage": "https://github.com/your-org/backbone-v14#readme"
+}

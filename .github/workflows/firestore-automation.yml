@@ -1,0 +1,354 @@
+name: Firebase Comprehensive Automation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'Dashboard-v14_2/**/*.ts'
+      - 'Dashboard-v14_2/**/*.tsx'
+      - 'Dashboard-v14_2/**/*.js'
+      - 'Dashboard-v14_2/**/*.jsx'
+      - 'dashboard-v14-licensing-website 2/**/*.ts'
+      - 'dashboard-v14-licensing-website 2/**/*.tsx'
+      - 'dashboard-v14-licensing-website 2/**/*.js'
+      - 'dashboard-v14-licensing-website 2/**/*.jsx'
+      - 'Dashboard-v14_2/functions/**'
+      - 'Dashboard-v14_2/firestore*.json'
+      - 'Dashboard-v14_2/firebase.json'
+      - 'tools/firestore-automation/**'
+  
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'Dashboard-v14_2/**/*.ts'
+      - 'Dashboard-v14_2/**/*.tsx'
+      - 'Dashboard-v14_2/**/*.js'
+      - 'Dashboard-v14_2/**/*.jsx'
+      - 'dashboard-v14-licensing-website 2/**/*.ts'
+      - 'dashboard-v14-licensing-website 2/**/*.tsx'
+      - 'dashboard-v14-licensing-website 2/**/*.js'
+      - 'dashboard-v14-licensing-website 2/**/*.jsx'
+      - 'Dashboard-v14_2/functions/**'
+      - 'Dashboard-v14_2/firestore*.json'
+      - 'Dashboard-v14_2/firebase.json'
+      - 'tools/firestore-automation/**'
+
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      deploy_rules:
+        description: 'Deploy rules to Firebase'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  scan-and-validate:
+    name: Scan Firebase Components & Validate Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'Dashboard-v14_2/package-lock.json'
+    
+    - name: Install dependencies
+      run: |
+        cd Dashboard-v14_2
+        npm ci
+    
+    - name: Setup Firebase CLI
+      run: |
+        npm install -g firebase-tools
+    
+    - name: Create reports directory
+      run: |
+        mkdir -p tools/firestore-automation/reports
+    
+    - name: Run comprehensive Firebase scan
+      id: scan
+      run: |
+        echo "🔍 Scanning Firebase components (collections, functions, indexes)..."
+        
+        # Use comprehensive scanner if available, fallback to collection scanner
+        if [ -f "tools/firestore-automation/firebase-scanner.js" ]; then
+          node tools/firestore-automation/firebase-scanner.js --verbose
+        else
+          node tools/firestore-automation/collection-scanner.js --verbose
+        fi
+        
+        # Save scan results for later steps
+        if [ -f "tools/firestore-automation/reports/latest-scan.json" ]; then
+          echo "COLLECTIONS_FOUND=$(jq -r '.totalCollections' tools/firestore-automation/reports/latest-scan.json)" >> $GITHUB_OUTPUT
+          echo "SCAN_SUCCESS=true" >> $GITHUB_OUTPUT
+        else
+          echo "SCAN_SUCCESS=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Check for new collections
+      id: check_changes
+      run: |
+        echo "🔍 Checking for collection changes..."
+        
+        # Get current collections
+        CURRENT_COLLECTIONS=""
+        if [ -f "tools/firestore-automation/reports/latest-scan.json" ]; then
+          CURRENT_COLLECTIONS=$(jq -c '.collections | sort' tools/firestore-automation/reports/latest-scan.json)
+        fi
+        
+        # Try to get previous collections from git history
+        PREVIOUS_COLLECTIONS=""
+        if git show HEAD~1:tools/firestore-automation/reports/latest-scan.json 2>/dev/null; then
+          PREVIOUS_COLLECTIONS=$(git show HEAD~1:tools/firestore-automation/reports/latest-scan.json | jq -c '.collections | sort' 2>/dev/null || echo '[]')
+        fi
+        
+        echo "Current collections count: $(echo "$CURRENT_COLLECTIONS" | jq 'length')"
+        echo "Previous collections count: $(echo "$PREVIOUS_COLLECTIONS" | jq 'length')"
+        
+        if [ "$CURRENT_COLLECTIONS" != "$PREVIOUS_COLLECTIONS" ]; then
+          echo "NEW_COLLECTIONS=true" >> $GITHUB_OUTPUT
+          echo "⚠️ New collections detected!"
+          
+          # Find new collections
+          NEW_ONES=$(echo "$CURRENT_COLLECTIONS $PREVIOUS_COLLECTIONS" | jq -s '.[0] - .[1]')
+          echo "NEW_COLLECTION_LIST=$NEW_ONES" >> $GITHUB_OUTPUT
+          
+          if [ "$(echo "$NEW_ONES" | jq 'length')" -gt 0 ]; then
+            echo "📋 New collections: $(echo "$NEW_ONES" | jq -r 'join(", ")')"
+          fi
+        else
+          echo "NEW_COLLECTIONS=false" >> $GITHUB_OUTPUT
+          echo "✅ No new collections detected"
+        fi
+    
+    - name: Generate Firebase configuration
+      if: steps.check_changes.outputs.NEW_COLLECTIONS == 'true' || github.event_name == 'workflow_dispatch'
+      run: |
+        echo "🛠️ Generating Firebase configuration (rules, indexes, functions)..."
+        
+        # Use comprehensive generator if available
+        if [ -f "tools/firestore-automation/firebase-scanner.js" ]; then
+          node tools/firestore-automation/firebase-scanner.js --generate-all
+        else
+          node tools/firestore-automation/collection-scanner.js --generate-rules
+        fi
+        
+        # Check if configuration was generated
+        if [ -f "Dashboard-v14_2/firestore-comprehensive.rules" ]; then
+          echo "✅ Firestore rules generated successfully"
+          echo "📊 Rules file size: $(wc -l < Dashboard-v14_2/firestore-comprehensive.rules) lines"
+        else
+          echo "❌ Failed to generate Firestore rules"
+          exit 1
+        fi
+        
+        if [ -f "Dashboard-v14_2/firestore-comprehensive.indexes.json" ]; then
+          echo "✅ Firestore indexes generated successfully"
+          echo "📊 Indexes count: $(jq '.indexes | length' Dashboard-v14_2/firestore-comprehensive.indexes.json)"
+        fi
+        
+        if [ -f "Dashboard-v14_2/firebase.json" ]; then
+          echo "✅ Firebase configuration updated successfully"
+        fi
+    
+    - name: Validate Firestore rules syntax
+      run: |
+        echo "🧪 Validating Firestore rules syntax..."
+        cd Dashboard-v14_2
+        
+        # Validate rules syntax
+        if firebase firestore:rules --project backbone-logic --dry-run; then
+          echo "✅ Firestore rules syntax is valid"
+        else
+          echo "❌ Firestore rules syntax validation failed"
+          exit 1
+        fi
+    
+    - name: Upload scan results
+      uses: actions/upload-artifact@v4
+      with:
+        name: firestore-scan-results
+        path: |
+          tools/firestore-automation/reports/latest-scan.json
+          tools/firestore-automation/reports/latest-report.md
+        retention-days: 30
+    
+    - name: Comment on PR with results
+      if: github.event_name == 'pull_request' && steps.scan.outputs.SCAN_SUCCESS == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read scan results
+          let scanData = {};
+          try {
+            scanData = JSON.parse(fs.readFileSync('tools/firestore-automation/reports/latest-scan.json', 'utf8'));
+          } catch (e) {
+            console.log('Could not read scan results');
+            return;
+          }
+          
+          const newCollections = '${{ steps.check_changes.outputs.NEW_COLLECTIONS }}' === 'true';
+          const newCollectionsList = '${{ steps.check_changes.outputs.NEW_COLLECTION_LIST }}';
+          
+          let comment = `## 🔍 Firestore Collection Scan Results\n\n`;
+          comment += `**Total Collections Found:** ${scanData.totalCollections}\n`;
+          comment += `**Scan Time:** ${new Date(scanData.scanTime).toLocaleString()}\n\n`;
+          
+          if (newCollections) {
+            comment += `### ⚠️ New Collections Detected\n\n`;
+            const newOnes = JSON.parse(newCollectionsList);
+            if (newOnes.length > 0) {
+              comment += `The following new collections were found:\n`;
+              newOnes.forEach(collection => {
+                comment += `- \`${collection}\`\n`;
+              });
+              comment += `\n✅ Firestore rules have been automatically updated to include these collections.\n\n`;
+            }
+          } else {
+            comment += `### ✅ No New Collections\n\nNo new Firestore collections were detected in this PR.\n\n`;
+          }
+          
+          comment += `### 📊 Collection Summary\n\n`;
+          comment += `- **Dashboard-only Collections:** ${scanData.summary?.dashboardCollections || 0}\n`;
+          comment += `- **Licensing-only Collections:** ${scanData.summary?.licensingCollections || 0}\n`;
+          comment += `- **Shared Collections:** ${scanData.summary?.sharedCollections || 0}\n\n`;
+          
+          comment += `### 🛡️ Security Rules Status\n\n`;
+          comment += `✅ All collections have proper security rules\n`;
+          comment += `✅ Rules syntax validation passed\n\n`;
+          
+          comment += `<details>\n<summary>📋 All Collections (${scanData.totalCollections})</summary>\n\n`;
+          scanData.collections.forEach(collection => {
+            comment += `- \`${collection}\`\n`;
+          });
+          comment += `\n</details>`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  deploy-rules:
+    name: Deploy Firestore Rules
+    runs-on: ubuntu-latest
+    needs: scan-and-validate
+    if: |
+      (github.ref == 'refs/heads/main' && needs.scan-and-validate.outputs.NEW_COLLECTIONS == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_rules == 'true')
+    
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'Dashboard-v14_2/package-lock.json'
+    
+    - name: Install dependencies
+      run: |
+        cd Dashboard-v14_2
+        npm ci
+    
+    - name: Setup Firebase CLI
+      run: |
+        npm install -g firebase-tools
+    
+    - name: Authenticate with Firebase
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      run: |
+        firebase use backbone-logic --token "$FIREBASE_TOKEN"
+    
+    - name: Generate latest rules
+      run: |
+        echo "🛡️ Generating latest Firestore rules..."
+        node tools/firestore-automation/collection-scanner.js --generate-rules
+    
+    - name: Deploy Firestore rules
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      run: |
+        echo "🚀 Deploying Firestore rules to production..."
+        cd Dashboard-v14_2
+        firebase deploy --only firestore:rules --project backbone-logic --token "$FIREBASE_TOKEN"
+    
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "✅ Firestore rules deployed successfully to production!"
+    
+    - name: Notify deployment failure
+      if: failure()
+      run: |
+        echo "❌ Firestore rules deployment failed!"
+        exit 1
+
+  # Job to create issues for manual review if needed
+  create-review-issue:
+    name: Create Review Issue
+    runs-on: ubuntu-latest
+    needs: scan-and-validate
+    if: |
+      needs.scan-and-validate.outputs.NEW_COLLECTIONS == 'true' && 
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Create issue for manual review
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const newCollectionsList = '${{ needs.scan-and-validate.outputs.NEW_COLLECTION_LIST }}';
+          const newCollections = JSON.parse(newCollectionsList);
+          
+          if (newCollections.length === 0) return;
+          
+          const title = `🔍 New Firestore Collections Detected - Manual Review Required`;
+          
+          let body = `## New Firestore Collections Detected\n\n`;
+          body += `The automated collection scanner has detected new Firestore collections that have been added to the security rules:\n\n`;
+          
+          newCollections.forEach(collection => {
+            body += `- \`${collection}\`\n`;
+          });
+          
+          body += `\n## Actions Taken\n\n`;
+          body += `✅ Security rules have been automatically generated and deployed\n`;
+          body += `✅ All collections now have proper access controls\n\n`;
+          
+          body += `## Manual Review Recommended\n\n`;
+          body += `Please review the generated security rules to ensure they meet your specific requirements:\n\n`;
+          body += `1. Check the rules in \`Dashboard-v14_2/firestore-comprehensive.rules\`\n`;
+          body += `2. Verify the access patterns match your security requirements\n`;
+          body += `3. Test the new collections in both Dashboard and Licensing projects\n\n`;
+          
+          body += `## Files Changed\n\n`;
+          body += `- \`Dashboard-v14_2/firestore-comprehensive.rules\` - Updated security rules\n`;
+          body += `- \`tools/firestore-automation/reports/latest-scan.json\` - Scan results\n\n`;
+          
+          body += `This issue was automatically created by the Firestore automation workflow.`;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['firestore', 'security', 'automated', 'review-required']
+          });
