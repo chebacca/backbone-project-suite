@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase State Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background-color: #f1f8e9; }
+        .error { border-color: #f44336; background-color: #ffebee; }
+        .info { border-color: #2196F3; background-color: #e3f2fd; }
+        button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #1976D2; }
+        .log-output {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Firebase State Debug</h1>
+        <p>Testing what Firebase objects are available in the BACKBONE app</p>
+
+        <div class="test-section info">
+            <h3>🔧 Test Controls</h3>
+            <button onclick="checkFirebaseState()">Check Firebase State</button>
+            <button onclick="testDirectFirebaseInit()">Test Direct Firebase Init</button>
+            <button onclick="simulateSignIn()">Simulate Sign In Process</button>
+            <button onclick="checkWindowObjects()">Check All Window Objects</button>
+        </div>
+
+        <div class="test-section" id="firebaseStatus">
+            <h3>🔥 Firebase State</h3>
+            <div id="firebaseLog" class="log-output">Click "Check Firebase State" to test...</div>
+        </div>
+
+        <div class="test-section" id="windowStatus">
+            <h3>🪟 Window Objects</h3>
+            <div id="windowLog" class="log-output">Click "Check All Window Objects" to test...</div>
+        </div>
+
+        <div class="test-section" id="signInStatus">
+            <h3>🔐 Sign In Simulation</h3>
+            <div id="signInLog" class="log-output">Click "Simulate Sign In Process" to test...</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDFnIzSYCdPsDDdvP1lympVxEeUn0AQhWs",
+            authDomain: "backbone-logic.firebaseapp.com",
+            projectId: "backbone-logic",
+            storageBucket: "backbone-logic.firebasestorage.app",
+            messagingSenderId: "749245129278",
+            appId: "1:749245129278:web:dfa5647101ea160a3b276f"
+        };
+
+        let app, auth, firestore;
+
+        function log(sectionId, message, type = 'info') {
+            const logElement = document.getElementById(sectionId + 'Log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            const section = document.getElementById(sectionId);
+            section.className = `test-section ${type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'}`;
+        }
+
+        function clearLog(sectionId) {
+            document.getElementById(sectionId + 'Log').textContent = '';
+        }
+
+        window.checkFirebaseState = function() {
+            clearLog('firebase');
+            log('firebase', '🔍 Checking Firebase state...', 'info');
+            
+            try {
+                // Check if Firebase is already initialized
+                const existingApps = getApps();
+                log('firebase', `📱 Existing Firebase apps: ${existingApps.length}`, 'info');
+                
+                if (existingApps.length > 0) {
+                    app = existingApps[0];
+                    log('firebase', '✅ Using existing Firebase app', 'success');
+                } else {
+                    log('firebase', '🔄 Initializing new Firebase app...', 'info');
+                    app = initializeApp(firebaseConfig);
+                    log('firebase', '✅ Firebase app initialized', 'success');
+                }
+                
+                // Initialize services
+                auth = getAuth(app);
+                firestore = getFirestore(app);
+                
+                log('firebase', '✅ Firebase Auth initialized', 'success');
+                log('firebase', '✅ Firebase Firestore initialized', 'success');
+                
+                // Set global variables (like BACKBONE does)
+                window.firebaseApp = app;
+                window.firebaseAuth = auth;
+                window.firebaseFirestore = firestore;
+                
+                log('firebase', '✅ Global Firebase variables set', 'success');
+                
+                // Test auth state
+                log('firebase', `🔐 Current user: ${auth.currentUser ? auth.currentUser.email : 'None'}`, 'info');
+                
+                // Check what BACKBONE's ensureFirebaseAuthReady would see
+                const hasFirebaseApp = !!window.firebaseApp;
+                const hasFirebaseAuth = !!window.firebaseAuth;
+                
+                log('firebase', `🔍 BACKBONE readiness check would see:`, 'info');
+                log('firebase', `   hasFirebaseApp: ${hasFirebaseApp}`, hasFirebaseApp ? 'success' : 'error');
+                log('firebase', `   hasFirebaseAuth: ${hasFirebaseAuth}`, hasFirebaseAuth ? 'success' : 'error');
+                
+                if (hasFirebaseApp && hasFirebaseAuth) {
+                    log('firebase', '✅ Firebase is ready for BACKBONE sign-in!', 'success');
+                } else {
+                    log('firebase', '❌ Firebase is NOT ready - this would cause the sign-in error', 'error');
+                }
+                
+            } catch (error) {
+                log('firebase', `❌ Firebase initialization failed: ${error.message}`, 'error');
+                console.error('Firebase error:', error);
+            }
+        };
+
+        window.testDirectFirebaseInit = function() {
+            clearLog('firebase');
+            log('firebase', '🧪 Testing direct Firebase initialization (like BACKBONE main.tsx)...', 'info');
+            
+            try {
+                // Simulate BACKBONE's firebase-init.ts
+                const existingApps = getApps();
+                
+                if (existingApps.length > 0) {
+                    log('firebase', '🔄 Using existing Firebase app', 'info');
+                    app = existingApps[0];
+                } else {
+                    log('firebase', '🔄 Creating new Firebase app', 'info');
+                    app = initializeApp(firebaseConfig);
+                }
+
+                // Initialize services
+                auth = getAuth(app);
+                firestore = getFirestore(app);
+
+                // Set global instances (exactly like firebase-init.ts)
+                window.firebaseApp = app;
+                window.firebaseAuth = auth;
+                window.firebaseFirestore = firestore;
+
+                log('firebase', '✅ Direct Firebase initialization successful', 'success');
+                log('firebase', `   App: ${!!app}`, 'success');
+                log('firebase', `   Auth: ${!!auth}`, 'success');
+                log('firebase', `   Firestore: ${!!firestore}`, 'success');
+                log('firebase', `   Global variables set: ${!!window.firebaseApp && !!window.firebaseAuth}`, 'success');
+                
+                // Test the exact check that ensureFirebaseAuthReady does
+                const hasFirebaseApp = window.firebaseApp;
+                const hasFirebaseAuth = window.firebaseAuth;
+                
+                if (hasFirebaseApp && hasFirebaseAuth) {
+                    // Test auth properties
+                    try {
+                        const testCurrentUser = auth.currentUser;
+                        log('firebase', '✅ Firebase Auth validation passed', 'success');
+                        log('firebase', `   Current user: ${testCurrentUser ? 'authenticated' : 'anonymous'}`, 'info');
+                        
+                        log('firebase', '🎉 Firebase is fully ready - sign-in should work!', 'success');
+                    } catch (authTestError) {
+                        log('firebase', `❌ Firebase Auth validation failed: ${authTestError.message}`, 'error');
+                    }
+                } else {
+                    log('firebase', '❌ Firebase readiness check failed', 'error');
+                    log('firebase', `   hasFirebaseApp: ${!!hasFirebaseApp}`, 'error');
+                    log('firebase', `   hasFirebaseAuth: ${!!hasFirebaseAuth}`, 'error');
+                }
+                
+            } catch (error) {
+                log('firebase', `❌ Direct Firebase init failed: ${error.message}`, 'error');
+                console.error('Direct init error:', error);
+            }
+        };
+
+        window.simulateSignIn = function() {
+            clearLog('signIn');
+            log('signIn', '🔐 Simulating BACKBONE sign-in process...', 'info');
+            
+            if (!auth) {
+                log('signIn', '❌ Firebase Auth not initialized - running init first...', 'error');
+                window.testDirectFirebaseInit();
+                
+                if (!window.firebaseAuth) {
+                    log('signIn', '❌ Still no Firebase Auth after init - cannot proceed', 'error');
+                    return;
+                }
+                auth = window.firebaseAuth;
+            }
+            
+            // Simulate the exact process from WebOnlyStartupFlow
+            log('signIn', '🔍 Step 1: Checking Firebase readiness (ensureFirebaseAuthReady simulation)...', 'info');
+            
+            const hasFirebaseApp = window.firebaseApp;
+            const hasFirebaseAuth = window.firebaseAuth;
+            
+            log('signIn', `   hasFirebaseApp: ${!!hasFirebaseApp}`, !!hasFirebaseApp ? 'success' : 'error');
+            log('signIn', `   hasFirebaseAuth: ${!!hasFirebaseAuth}`, !!hasFirebaseAuth ? 'success' : 'error');
+            
+            if (!hasFirebaseApp || !hasFirebaseAuth) {
+                log('signIn', '❌ Firebase readiness check failed - this is why sign-in fails!', 'error');
+                log('signIn', '💡 Solution: Ensure Firebase is initialized before WebOnlyStartupFlow runs', 'info');
+                return;
+            }
+            
+            log('signIn', '✅ Step 1 passed: Firebase is ready', 'success');
+            
+            // Test auth validation
+            log('signIn', '🔍 Step 2: Testing Firebase Auth validation...', 'info');
+            try {
+                const testCurrentUser = auth.currentUser;
+                log('signIn', '✅ Step 2 passed: Firebase Auth validation successful', 'success');
+            } catch (testError) {
+                log('signIn', `❌ Step 2 failed: Firebase Auth validation error: ${testError.message}`, 'error');
+                return;
+            }
+            
+            // Test actual sign-in
+            log('signIn', '🔍 Step 3: Testing actual sign-in with enterprise.user@enterprisemedia.com...', 'info');
+            
+            signInWithEmailAndPassword(auth, 'enterprise.user@enterprisemedia.com', 'Enterprise123!')
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    log('signIn', '🎉 Step 3 SUCCESS: Sign-in completed!', 'success');
+                    log('signIn', `   User ID: ${user.uid}`, 'success');
+                    log('signIn', `   Email: ${user.email}`, 'success');
+                    log('signIn', `   Email Verified: ${user.emailVerified}`, 'success');
+                    
+                    log('signIn', '✅ ALL STEPS PASSED - Sign-in works perfectly!', 'success');
+                    log('signIn', '💡 The issue must be in BACKBONE\'s Firebase initialization timing', 'info');
+                })
+                .catch((error) => {
+                    log('signIn', `❌ Step 3 failed: Sign-in error: ${error.code} - ${error.message}`, 'error');
+                });
+        };
+
+        window.checkWindowObjects = function() {
+            clearLog('window');
+            log('window', '🪟 Checking all window objects...', 'info');
+            
+            // Check Firebase-related objects
+            const firebaseObjects = [
+                'firebaseApp', 'firebaseAuth', 'firebaseFirestore', 'firebaseStorage',
+                'firebase', 'Firebase', 'FIREBASE_CONFIG'
+            ];
+            
+            log('window', '🔥 Firebase-related objects:', 'info');
+            firebaseObjects.forEach(obj => {
+                const exists = window[obj] !== undefined;
+                const type = typeof window[obj];
+                log('window', `   ${obj}: ${exists ? '✅' : '❌'} (${type})`, exists ? 'success' : 'error');
+            });
+            
+            // Check BACKBONE-specific objects
+            const backboneObjects = [
+                'WEBONLY_MODE', 'USE_FIRESTORE', 'DISABLE_HTTP_API', 'WEB_ONLY',
+                'firebase_authenticated', 'current_firebase_token'
+            ];
+            
+            log('window', '🎯 BACKBONE-specific objects:', 'info');
+            backboneObjects.forEach(obj => {
+                const exists = window[obj] !== undefined;
+                const value = window[obj];
+                log('window', `   ${obj}: ${exists ? '✅' : '❌'} (${value})`, exists ? 'success' : 'error');
+            });
+            
+            // Check test functions
+            const testFunctions = ['testConsole', 'testFirebase', 'SmokeTestUtils'];
+            
+            log('window', '🧪 Test functions:', 'info');
+            testFunctions.forEach(func => {
+                const exists = typeof window[func] === 'function';
+                log('window', `   ${func}: ${exists ? '✅' : '❌'}`, exists ? 'success' : 'error');
+            });
+            
+            // Check localStorage
+            log('window', '💾 LocalStorage auth tokens:', 'info');
+            const authKeys = [
+                'firebase_id_token', 'team_member_token', 'auth_token', 'jwt_token', 'token',
+                'is_authenticated', 'firebase_authenticated'
+            ];
+            
+            authKeys.forEach(key => {
+                const exists = localStorage.getItem(key) !== null;
+                const value = exists ? 'present' : 'missing';
+                log('window', `   ${key}: ${exists ? '✅' : '❌'} (${value})`, exists ? 'success' : 'error');
+            });
+        };
+
+        // Auto-run basic check on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                window.checkFirebaseState();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

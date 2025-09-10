@@ -1,90 +1,87 @@
 #!/usr/bin/env node
 
 /**
- * 🔍 DEBUG USER TOKEN CLAIMS
- * 
- * This script checks what custom claims are actually in the user's current Firebase token
- * and compares them with what we expect to be there.
+ * Debug User Token Claims
+ * Check what claims the enterprise user has in their Firebase token
  */
 
-const admin = require('firebase-admin');
+const { initializeApp } = require('firebase/app');
+const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
-// Initialize Firebase Admin (uses default credentials)
-if (!admin.apps.length) {
-  admin.initializeApp({ projectId: 'backbone-logic' });
-}
+// Firebase configuration
+const firebaseConfig = {
+  projectId: 'backbone-logic',
+  apiKey: 'AIzaSyDFnIzSYCdPsDDdvP1lympVxEeUn0AQhWs',
+  authDomain: 'backbone-logic.firebaseapp.com',
+  databaseURL: 'https://backbone-logic-default-rtdb.firebaseio.com',
+  storageBucket: 'backbone-logic.firebasestorage.app',
+  messagingSenderId: '749245129278',
+  appId: '1:749245129278:web:dfa5647101ea160a3b276f',
+  measurementId: 'G-8SZRDQ4XVR'
+};
 
-const auth = admin.auth();
-
-async function debugUserTokenClaims() {
+async function debugUserToken() {
+  console.log('🔍 Debugging User Token Claims...\n');
+  
   try {
-    console.log('🔍 Debugging User Token Claims...\n');
-
-    const email = 'enterprise.user@enterprisemedia.com';
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     
-    // Get Firebase user
-    const firebaseUser = await auth.getUserByEmail(email);
-    console.log(`🔍 Found Firebase user: ${email} (UID: ${firebaseUser.uid})`);
+    // Sign in with enterprise user
+    const userCredential = await signInWithEmailAndPassword(auth, 'enterprise.user@enterprisemedia.com', 'Enterprise123!');
+    const user = userCredential.user;
     
-    // Get current user record with custom claims
-    const userRecord = await auth.getUser(firebaseUser.uid);
-    console.log('\n📋 Current custom claims in Firebase Auth:');
-    console.log(JSON.stringify(userRecord.customClaims, null, 2));
+    console.log('✅ Authentication successful');
+    console.log(`   User ID: ${user.uid}`);
+    console.log(`   Email: ${user.email}`);
+    console.log(`   Display Name: ${user.displayName}`);
     
-    // Check tokens valid after time
-    console.log(`\n🕐 Tokens valid after: ${new Date(userRecord.tokensValidAfterTime).toISOString()}`);
-    console.log(`🕐 Current time: ${new Date().toISOString()}`);
+    // Get the ID token to inspect claims
+    const idToken = await user.getIdToken();
+    const tokenResult = await user.getIdTokenResult();
     
-    // Check if custom claims include expected organization access
-    const claims = userRecord.customClaims || {};
+    console.log('\n🔑 Token Claims:');
+    console.log('================');
+    console.log(JSON.stringify(tokenResult.claims, null, 2));
     
-    console.log('\n🔍 CLAIMS ANALYSIS:');
-    console.log(`✅ Email: ${claims.email || 'MISSING'}`);
-    console.log(`✅ Role: ${claims.role || 'MISSING'}`);
-    console.log(`✅ Primary Organization: ${claims.organizationId || 'MISSING'}`);
-    console.log(`✅ Secondary Organization: ${claims.secondaryOrganizationId || 'MISSING'}`);
-    console.log(`✅ Accessible Organizations: ${JSON.stringify(claims.accessibleOrganizations || [])}`);
-    console.log(`✅ Effective Hierarchy: ${claims.effectiveHierarchy || 'MISSING'}`);
-    console.log(`✅ Permissions: ${JSON.stringify(claims.permissions || [])}`);
+    // Check specific claims that the rules are looking for
+    console.log('\n🎯 Key Claims for Firestore Rules:');
+    console.log('===================================');
+    console.log(`organizationId: ${tokenResult.claims.organizationId || 'NOT SET'}`);
+    console.log(`organizations: ${JSON.stringify(tokenResult.claims.organizations) || 'NOT SET'}`);
+    console.log(`role: ${tokenResult.claims.role || 'NOT SET'}`);
+    console.log(`email: ${tokenResult.claims.email || 'NOT SET'}`);
     
-    // Check if user has access to the organization they're trying to query
-    const targetOrg = 'enterprise_media_org';
-    const hasAccess = claims.organizationId === targetOrg || 
-                     claims.secondaryOrganizationId === targetOrg ||
-                     (claims.accessibleOrganizations && claims.accessibleOrganizations.includes(targetOrg));
+    // Check if user is enterprise
+    const isEnterprise = user.email.includes('@enterprisemedia.com');
+    console.log(`isEnterprise: ${isEnterprise}`);
     
-    console.log(`\n🎯 ACCESS CHECK for "${targetOrg}":`, hasAccess ? '✅ ALLOWED' : '❌ DENIED');
+    console.log('\n📋 Analysis:');
+    console.log('============');
     
-    if (!hasAccess) {
-      console.log('\n🚨 PROBLEM IDENTIFIED:');
-      console.log(`The user is trying to access organization "${targetOrg}" but their custom claims don't include access to it.`);
-      console.log('\n🔧 SOLUTION: Update custom claims to include this organization.');
+    if (!tokenResult.claims.organizationId && !tokenResult.claims.organizations) {
+      console.log('❌ PROBLEM: User has no organization claims in token');
+      console.log('   This will cause Firestore rules to fail');
+      console.log('   Solution: Need to set custom claims for the user');
     } else {
-      console.log('\n✅ CLAIMS LOOK CORRECT:');
-      console.log('The user should have access. The issue might be:');
-      console.log('1. Token caching in the browser');
-      console.log('2. Firebase rules not matching the claims properly');
-      console.log('3. The app is using an old cached token');
+      console.log('✅ User has organization claims');
     }
     
-    // Generate a test custom token to verify claims work
-    console.log('\n🧪 GENERATING TEST TOKEN...');
-    const testToken = await auth.createCustomToken(firebaseUser.uid, claims);
-    console.log('✅ Test token generated successfully (claims are valid)');
+    if (!tokenResult.claims.role) {
+      console.log('❌ PROBLEM: User has no role claim in token');
+      console.log('   This will cause role-based rules to fail');
+    } else {
+      console.log('✅ User has role claim');
+    }
     
   } catch (error) {
-    console.error('❌ Error debugging user token claims:', error);
-    process.exit(1);
+    console.error('❌ Error:', error.message);
   }
 }
 
 // Run the debug
-debugUserTokenClaims()
-  .then(() => {
-    console.log('\n✅ Debug completed successfully');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('❌ Debug failed:', error);
-    process.exit(1);
-  });
+if (require.main === module) {
+  debugUserToken().catch(console.error);
+}
+
+module.exports = { debugUserToken };

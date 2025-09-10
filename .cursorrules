@@ -149,6 +149,98 @@ Authorization: Bearer <firebase-id-token>
 - **Firebase Functions**: Use `.js` or `.ts` as appropriate for function code
 - **Configuration Files**: Use `.json` for Firebase config files
 
+### 🔥 FIREBASE MCP TOOL PRIORITY
+**CRITICAL**: This is a Firebase-only project. When responding to prompts, ALWAYS prioritize Firebase MCP tools over other approaches:
+
+#### Primary Firebase MCP Tools (Use First):
+- `firebase_get_project` - Get current project info
+- `firebase_get_environment` - Check Firebase environment
+- `firestore_query_collection` - Query Firestore data
+- `firestore_get_documents` - Get specific documents
+- `firestore_list_collections` - List available collections
+- `auth_get_user` - Get user information
+- `auth_list_users` - List project users
+- `firebase_consult_assistant` - Firebase-specific AI assistance
+
+#### When to Use Firebase MCP vs Other Tools:
+- ✅ **Firebase MCP FIRST** for: Data queries, user management, project info, Firestore operations
+- ✅ **Codebase search** for: Finding existing code patterns, understanding implementations
+- ✅ **Terminal commands** for: Building, deploying, npm operations
+- ❌ **Avoid** external API calls when Firebase MCP can handle the task
+
+#### Firebase MCP Server Configuration:
+- **firebase-dashboard**: Main app with full Firebase services
+- **firebase-licensing**: Licensing website configuration  
+- **firebase-analytics**: Debug and analytics operations
+
+#### Firebase MCP Usage Patterns:
+```typescript
+// 1. Always start with environment check
+firebase_get_environment() → Check current project/auth state
+
+// 2. For data operations, use Firestore MCP tools
+firestore_query_collection() → Query collections with filters
+firestore_get_documents() → Get specific documents
+firestore_list_collections() → Discover available collections
+
+// 3. For user management, use Auth MCP tools  
+auth_get_user() → Get user by email/UID
+auth_list_users() → List all users
+auth_set_claim() → Set custom claims
+
+// 4. For project management
+firebase_get_project() → Get project details
+firebase_list_apps() → List registered apps
+```
+
+#### Prompt Response Priority:
+1. **Firebase MCP tools** (data, users, project info)
+2. **Codebase search** (find existing patterns)
+3. **Terminal commands** (build, deploy, npm)
+4. **File operations** (read, edit, create)
+5. **External APIs** (only when Firebase MCP insufficient)
+
+### 🔥 FIREBASE PERSISTENCE ARCHITECTURE (NEW)
+**CRITICAL**: Enhanced Firebase system ensures seamless operation after WebOnlyStartupFlow:
+
+#### Core Firebase Persistence Components:
+- **Firebase Persistence Manager**: Maintains auth state across app transitions
+- **Firebase Auto-Initializer**: Ensures services are ready when main app loads  
+- **Global Firebase Provider**: Wraps main app with Firebase context
+- **Global Collections Manager**: Unified access to all Firebase collections
+- **Health Monitoring**: Automatic detection and recovery from issues
+- **Token Management**: Automatic refresh and validation (every 30 minutes)
+
+#### Firebase Persistence Integration:
+```typescript
+// Auto-initializes when main app loads
+import './services/FirebaseAutoInitializer';
+
+// Use in components
+const { isAuthenticated, user, servicesReady } = useGlobalFirebase();
+
+// Unified collection access
+const projects = await globalFirebaseCollectionsManager.getCollection('projects', {
+  organizationId: 'org-123',
+  where: [{ field: 'status', operator: '==', value: 'active' }]
+});
+```
+
+#### Firebase Service Lifecycle:
+1. **WebOnlyStartupFlow** → Sets tokens and launches project
+2. **FirebaseAutoInitializer** → Ensures all services ready
+3. **GlobalFirebaseProvider** → Provides context to all components
+4. **FirebasePersistenceManager** → Monitors and maintains services
+5. **CollectionsManager** → Provides unified data access
+
+#### Key Benefits:
+- ✅ **No service interruption** after startup flow completes
+- ✅ **Automatic token refresh** keeps auth valid
+- ✅ **Health monitoring** with auto-recovery
+- ✅ **Consistent data access** across all components
+- ✅ **Organization-scoped** data filtering
+- ✅ **Real-time updates** and smart caching
+
 ### Consulting MPC Library
 Always reference the shared-mpc-library for:
 - Complete Firebase Functions implementation details
@@ -157,3 +249,4 @@ Always reference the shared-mpc-library for:
 - Production build configurations
 - Error handling best practices
 - API integration patterns
+- **NEW**: Firebase Persistence Architecture patterns (`FIREBASE_PERSISTENCE_ARCHITECTURE_MPC.md`)

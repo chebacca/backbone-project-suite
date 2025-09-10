@@ -1,24 +1,36 @@
 #!/usr/bin/env node
 
 /**
- * 🏢 Enterprise Mock Data Generator for BACKBONE v14.2
+ * 🏢 Enterprise Mock Data Generator for BACKBONE v14.2 (OPTIMIZED)
  * 
- * Creates comprehensive mock data for enterprise.user account across all 52 collections
- * with proper relationships, tenant isolation, and realistic business scenarios.
+ * Creates essential mock data for enterprise.user account with focus on core functionality
+ * for both Dashboard and Licensing projects. Optimized to avoid heavy collections that
+ * bog down seeding while maintaining proper relationships and tenant isolation.
  * 
- * ✅ CONSOLIDATION UPDATE: This script now reflects the consolidated enterprise user:
+ * ✅ CONSOLIDATION UPDATE: This script reflects the consolidated enterprise user:
  * - Single user: enterprise.user@enterprisemedia.com (duplicate removed)
  * - Role: OWNER (users collection) + ADMIN (teamMembers collection)
  * - Organization: enterprise-org-001
  * - Firebase UID: 2ysTqv3pwiXyKxOeExAfEKOIh7K2
  * 
- * ✅ SESSION TIMING DATA UPDATE: All sessions now include:
- * - callTime: Session Data Call (when the session starts)
- * - wrapTime: Wrap Times (when the session ends)
- * - dueDate: Due Date (when deliverables are due)
- * - sessionDate: Session date in YYYY-MM-DD format
- * - Correct SessionStatus enums (PLANNING, PLANNED, PRODUCTION_IN_PROGRESS, etc.)
- * - Production metadata (phase, type, weather, special requirements)
+ * ✅ ESSENTIAL COLLECTIONS INCLUDED:
+ * - Organizations, Users, TeamMembers (with authentication)
+ * - Projects, Sessions, Workflows (core functionality)
+ * - Inventory, Assets (essential data)
+ * - Subscriptions, Licenses, Payments (Enterprise tier)
+ * - Timecards, PBM Schedules (business operations)
+ * 
+ * ✅ OPTIMIZATIONS (Heavy collections removed):
+ * - Network management data (not essential for core functionality)
+ * - Large media file creation (bogs down seeding)
+ * - AI agents and messages (not essential for basic functionality)
+ * - Large datasets and assignments
+ * - Complex delivery bibles
+ * - Miscellaneous collections
+ * 
+ * ✅ SESSION TIMING DATA: All sessions include complete timing data
+ * ✅ ENTERPRISE TIER: Proper subscriptions, licenses, and payments
+ * ✅ AUTHENTICATION: Firebase Auth users created for login capability
  * 
  * Usage:
  *   node generate-enterprise-mock-data.js --dry-run    # Mock mode (safe preview)
@@ -33,7 +45,7 @@
  * - Checks for existing enterprise data before creating
  * - Offers cleanup options for conflicting data
  * - Mock mode shows what would be created without writing to Firebase
- * - All sessions include complete timing data for Dashboard Backbone Session Page
+ * - Optimized for faster seeding while maintaining data relationships
  */
 
 const admin = require('firebase-admin');
@@ -2683,6 +2695,59 @@ class EnterpriseMockDataGenerator {
     console.log(`✅ Created ${deliverableBibles.length} network delivery bibles with comprehensive deliverables`);
   }
 
+  // Essential PBM Data (Simplified)
+  async createEssentialPBMData() {
+    console.log('📺 Creating essential PBM data...');
+
+    // Create essential PBM schedules (simplified)
+    const pbmSchedules = [
+      {
+        name: 'Morning News Block',
+        startTime: '06:00',
+        endTime: '09:00',
+        type: 'NEWS',
+        priority: 'HIGH'
+      },
+      {
+        name: 'Prime Time Entertainment',
+        startTime: '20:00',
+        endTime: '23:00',
+        type: 'ENTERTAINMENT',
+        priority: 'HIGH'
+      },
+      {
+        name: 'Late Night Programming',
+        startTime: '23:00',
+        endTime: '01:00',
+        type: 'LATE_NIGHT',
+        priority: 'MEDIUM'
+      }
+    ];
+
+    for (const schedule of pbmSchedules) {
+      const scheduleId = this.generateId('pbm_schedule');
+      const scheduleData = {
+        id: scheduleId,
+        organizationId: this.organizationId,
+        name: schedule.name,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        type: schedule.type,
+        priority: schedule.priority,
+        isActive: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdBy: this.adminUserId,
+        startDate: new Date().toISOString().split('T')[0],
+        userId: this.adminUserId,
+        status: 'ACTIVE'
+      };
+
+      await this.mockCreateDocument('pbm_schedules', scheduleId, scheduleData);
+    }
+
+    console.log(`✅ Created ${pbmSchedules.length} essential PBM schedules`);
+  }
+
   // Main execution function
   async generateAllMockData() {
     console.log('🚀 Starting Enterprise Mock Data Generation for BACKBONE v14.2');
@@ -2737,20 +2802,24 @@ class EnterpriseMockDataGenerator {
         }
       }
 
+      // ESSENTIAL DATA ONLY - Optimized for Dashboard & Licensing
       await this.createOrganizationAndAdmin();
       await this.createTeamMembers();
       await this.createClients();
       await this.createProjects();
       await this.createSessionsAndWorkflows();
       await this.createInventoryAndAssets();
-      await this.createNetworkData();
-      await this.createMediaFiles();
-      await this.createAIAgentsAndMessages();
-      await this.createBusinessData();
+      await this.createBusinessData(); // Includes subscriptions, licenses, payments
       await this.createTimecardData();
-      await this.createDatasetsAndAssignments();
-      await this.createNetworkDeliveryBibles();
-      await this.createAdditionalData();
+      await this.createEssentialPBMData(); // Simplified PBM data
+      
+      // REMOVED HEAVY COLLECTIONS:
+      // - createNetworkData() - Network management (not essential for core functionality)
+      // - createMediaFiles() - Large file creation (bogs down seeding)
+      // - createAIAgentsAndMessages() - AI data (not essential for basic functionality)
+      // - createDatasetsAndAssignments() - Large dataset creation
+      // - createNetworkDeliveryBibles() - Complex delivery data
+      // - createAdditionalData() - Miscellaneous collections
 
       // Authenticate all users if requested
       if (shouldAuthenticate) {
@@ -2777,8 +2846,9 @@ class EnterpriseMockDataGenerator {
         console.log(`✅ Sessions: ${this.sessions.length}`);
         console.log(`✅ Assets: ${this.assets.length}`);
         console.log(`✅ Workflows: ${this.workflows.length}`);
-        console.log(`✅ All 52 collections populated with realistic data`);
+        console.log(`✅ Essential collections populated with realistic data`);
         console.log(`✅ Proper relationships and tenant isolation implemented`);
+        console.log(`✅ Optimized for Dashboard & Licensing functionality`);
         
         console.log('\n🔍 Ready for Global Search Testing!');
         console.log('The enterprise.user account now has comprehensive data across all collections.');
