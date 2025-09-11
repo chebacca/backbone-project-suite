@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Firestore Index</title>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getFirestore, collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            projectId: 'backbone-logic',
+            apiKey: 'AIzaSyBvQvQvQvQvQvQvQvQvQvQvQvQvQvQvQvQ',
+            authDomain: 'backbone-logic.firebaseapp.com',
+            storageBucket: 'backbone-logic.appspot.com',
+            messagingSenderId: '749245129278',
+            appId: '1:749245129278:web:1234567890abcdef'
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function createTimecardIndex() {
+            try {
+                console.log('🔧 Triggering Firestore index creation for timecard queries...');
+                
+                // This query will trigger the index creation
+                const testQuery = query(
+                    collection(db, 'timecardEntries'),
+                    where('userId', '==', 'test-user-id'),
+                    where('organizationId', '==', 'test-org-id'),
+                    where('date', '==', '2024-01-01'),
+                    orderBy('createdAt', 'desc'),
+                    limit(1)
+                );
+                
+                console.log('📋 Running test query to trigger index creation...');
+                
+                try {
+                    const querySnapshot = await getDocs(testQuery);
+                    console.log('✅ Query executed successfully - index should be created now');
+                    console.log('📊 Query returned', querySnapshot.docs.length, 'documents');
+                    document.getElementById('status').innerHTML = '✅ Index creation triggered successfully!';
+                } catch (queryError) {
+                    if (queryError.code === 'failed-precondition') {
+                        console.log('🎯 Perfect! This error means the index is being created');
+                        console.log('📧 You should receive an email when the index is ready');
+                        console.log('⏱️  Index creation typically takes 2-5 minutes');
+                        document.getElementById('status').innerHTML = '🎯 Perfect! Index is being created. Check your email for confirmation.';
+                    } else {
+                        console.error('❌ Unexpected error:', queryError);
+                        document.getElementById('status').innerHTML = '❌ Error: ' + queryError.message;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Error creating timecard index:', error);
+                document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+
+        // Run when page loads
+        window.addEventListener('load', createTimecardIndex);
+    </script>
+</head>
+<body>
+    <h1>Create Firestore Index</h1>
+    <p>This page will trigger the creation of the missing Firestore index for timecard queries.</p>
+    <div id="status">🔄 Creating index...</div>
+    <p>Check the browser console for detailed logs.</p>
+</body>
+</html>

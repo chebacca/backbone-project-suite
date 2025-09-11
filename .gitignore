@@ -32,6 +32,18 @@ apps/desktop/release/
 .turbo/
 .vite/
 
+# Firebase hosting build outputs (CRITICAL: Contains build artifacts)
+apps/web/public/
+public/
+!public/.gitkeep
+
+# Build artifacts that might contain sensitive data
+bundle-analysis.json
+*.bundle.js
+*.bundle.js.map
+*.chunk.js
+*.chunk.js.map
+
 # ============================================================================
 # ENVIRONMENT VARIABLES & SECRETS (CRITICAL SECURITY)
 # ============================================================================
@@ -45,6 +57,9 @@ apps/desktop/release/
 *.env.local
 *.env.production
 *.env.development
+*.env.airflow
+*.env.emulator
+emulator.env
 
 # Firebase environment configuration
 .runtimeconfig.json
@@ -56,10 +71,39 @@ functions/.env.*
 *firebase-adminsdk-*.json
 *serviceAccount*.json
 backbone-logic-firebase-adminsdk-fbsvc-a4ae068c8f.json
+*-firebase-adminsdk-*.json
+*-service-account-*.json
 
-# Authentication tokens
+# Authentication tokens and credentials
 *token*.txt
 auth_token.txt
+fresh_token.txt
+new_token.txt
+*.token
+*.auth
+*.credential
+*.key
+*.secret
+*.password
+
+# API Keys and secrets (comprehensive patterns)
+*api-key*
+*apikey*
+*secret-key*
+*secretkey*
+*private-key*
+*privatekey*
+*access-key*
+*accesskey*
+*client-secret*
+*clientsecret*
+
+# Configuration files that might contain secrets
+config.local.json
+config.production.json
+config.development.json
+secrets.json
+credentials.json
 
 # ============================================================================
 # EDITOR & IDE FILES
