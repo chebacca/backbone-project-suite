@@ -200,7 +200,34 @@ firebase_list_apps() → List registered apps
 4. **File operations** (read, edit, create)
 5. **External APIs** (only when Firebase MCP insufficient)
 
-### 🔥 FIREBASE PERSISTENCE ARCHITECTURE (NEW)
+### 🔥 UNIVERSAL FIREBASE INTERCEPTOR ARCHITECTURE (NEW)
+**CRITICAL**: UniversalFirebaseInterceptor positioned at highest level for maximum HTTP request coverage:
+
+#### UniversalFirebaseInterceptor Positioning:
+- **Location**: main.tsx line 19 (immediately after Chrome extension mitigation)
+- **Coverage**: ALL HTTP requests throughout the entire application
+- **Auto-Installation**: Automatically installs when imported (no manual setup required)
+- **Global Access**: Available on window.firebaseInterceptor for all components
+- **Endpoint Mapping**: 20+ endpoints configured for direct Firestore access
+- **Organization Scoping**: Automatic organization-based data filtering
+
+#### Interceptor Integration Points:
+- **InventoryContext**: Early API calls intercepted during app initialization
+- **UnifiedSessionContext**: Session loading requests intercepted
+- **UnifiedTimecardContext**: Timecard data requests intercepted
+- **UnifiedCallSheetContext**: Call sheet data requests intercepted
+- **RootStoreProvider**: Store initialization requests intercepted
+- **All API Clients**: UnifiedApiClient, StandardApiService, GlobalApiClient
+
+#### UniversalFirebaseInterceptor Benefits:
+- ✅ **Maximum Coverage**: Catches ALL HTTP requests from app startup
+- ✅ **Early Interception**: Positioned before any service imports
+- ✅ **Clean Architecture**: Single initialization point in main.tsx
+- ✅ **Firebase Native**: Direct Firestore access bypassing API layers
+- ✅ **Organization Scoped**: Automatic tenant isolation
+- ✅ **Error Handling**: Graceful fallbacks when Firebase unavailable
+
+### 🔥 FIREBASE PERSISTENCE ARCHITECTURE
 **CRITICAL**: Enhanced Firebase system ensures seamless operation after WebOnlyStartupFlow:
 
 #### Core Firebase Persistence Components:

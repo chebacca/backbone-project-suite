@@ -238,33 +238,41 @@ class EnterpriseMockDataGenerator {
     }
   }
 
-  // Helper function to create Firebase Auth user
-  async createFirebaseAuthUser(email, displayName, uid = null) {
+  // Helper function to create Firebase Auth user with custom claims
+  async createFirebaseAuthUser(email, displayName, uid = null, role = 'USER', organizationId = null) {
     if (isDryRun) {
-      console.log(`🔐 MOCK: Would create Firebase Auth user: ${email}`);
+      console.log(`🔐 MOCK: Would create Firebase Auth user: ${email} with role: ${role}`);
       return { uid: uid || 'mock-uid' };
     }
 
     try {
       // Check if user already exists
+      let userRecord;
       try {
-        const existingUser = await auth.getUserByEmail(email);
+        userRecord = await auth.getUserByEmail(email);
         console.log(`✅ Firebase Auth user already exists: ${email}`);
-        return existingUser;
       } catch (error) {
         // User doesn't exist, create them
+        userRecord = await auth.createUser({
+          uid: uid,
+          email: email,
+          password: defaultPassword, // Use the configured password
+          displayName: displayName,
+          emailVerified: true
+        });
+        console.log(`✅ Created Firebase Auth user: ${email} (${displayName})`);
       }
 
-      // Create Firebase Auth user
-      const userRecord = await auth.createUser({
-        uid: uid,
-        email: email,
-        password: defaultPassword, // Use the configured password
-        displayName: displayName,
-        emailVerified: true
-      });
+      // 🔥 NEW: Set custom claims based on role and organization
+      const customClaims = this.createCustomClaimsForRole(email, displayName, role, organizationId);
+      
+      try {
+        await auth.setCustomUserClaims(userRecord.uid, customClaims);
+        console.log(`🎯 Set custom claims for ${email}: Role=${customClaims.role}, Hierarchy=${customClaims.effectiveHierarchy}`);
+      } catch (claimsError) {
+        console.warn(`⚠️ Failed to set custom claims for ${email}:`, claimsError.message);
+      }
 
-      console.log(`✅ Created Firebase Auth user: ${email} (${displayName})`);
       return userRecord;
 
     } catch (error) {
@@ -276,6 +284,92 @@ class EnterpriseMockDataGenerator {
       // Return a mock user record so the script can continue
       return { uid: uid || `mock-${Date.now()}`, email: email, displayName: displayName };
     }
+  }
+
+  // 🔥 NEW: Create custom claims based on role and hierarchy
+  createCustomClaimsForRole(email, displayName, role, organizationId) {
+    // Role to hierarchy mapping
+    const roleHierarchyMap = {
+      'ADMIN': 100, 'admin': 100, 'OWNER': 100, 'owner': 100,
+      'Director': 70, 'Producer': 65, 'Production Manager': 60,
+      'IT Manager': 75, 'Systems Administrator': 70, 'DevOps Engineer': 65,
+      'Project Manager': 75, 'Operations Manager': 80,
+      'Editor': 60, 'Creative Director': 70, 'Art Director': 55,
+      'Production Assistant': 40, 'Account Manager': 45,
+      'USER': 20, 'TEAM_MEMBER': 30, 'member': 30, 'viewer': 10
+    };
+
+    const hierarchy = roleHierarchyMap[role] || 30;
+    const isAdmin = hierarchy >= 100 || role.toLowerCase().includes('admin') || role.toLowerCase().includes('owner');
+    
+    // Determine dashboard role
+    let dashboardRole = 'USER';
+    if (isAdmin) dashboardRole = 'ADMIN';
+    else if (hierarchy >= 80) dashboardRole = 'MANAGER';
+    else if (hierarchy >= 60) dashboardRole = 'EDITOR';
+
+    // Get permissions based on hierarchy
+    const permissions = this.getPermissionsForHierarchy(hierarchy, role);
+
+    return {
+      // Essential identity
+      email: email,
+      
+      // Core role and organization
+      role: dashboardRole,
+      organizationId: organizationId || this.organizationId,
+      
+      // Multi-organization access (compact)
+      accessibleOrganizations: [
+        organizationId || this.organizationId,
+        'enterprise-org-001',
+        'enterprise-media-org'
+      ].filter(Boolean).filter((org, index, arr) => arr.indexOf(org) === index),
+      
+      // Team member essentials
+      isTeamMember: true,
+      isOrganizationOwner: role === 'OWNER' || role === 'owner',
+      teamMemberRole: role,
+      
+      // License
+      licenseType: 'ENTERPRISE',
+      
+      // Hierarchy (compact)
+      effectiveHierarchy: hierarchy,
+      
+      // Essential permissions (compact)
+      permissions: isAdmin ? ['admin:all', 'read:all', 'write:all'] : 
+                  hierarchy >= 80 ? ['admin:team', 'manage:projects'] :
+                  hierarchy >= 60 ? ['manage:team', 'access:admin'] :
+                  ['read:team', 'write:team'],
+      
+      // Admin flags
+      isEnterpriseAdmin: isAdmin,
+      hasUniversalAccess: isAdmin,
+      
+      // Metadata (compact)
+      claimsVersion: '4.1'
+    };
+  }
+
+  // 🔥 NEW: Get permissions based on hierarchy level
+  getPermissionsForHierarchy(hierarchy, role) {
+    const permissions = ['read:basic', 'write:own'];
+    
+    if (hierarchy >= 30) permissions.push('read:team', 'write:team', 'access:sessions', 'access:projects');
+    if (hierarchy >= 40) permissions.push('read:inventory', 'write:inventory', 'access:media', 'access:reports');
+    if (hierarchy >= 50) permissions.push('read:analytics', 'write:analytics', 'access:timecards');
+    if (hierarchy >= 60) permissions.push('read:management', 'write:management', 'manage:team', 'access:billing');
+    if (hierarchy >= 70) permissions.push('read:admin', 'write:admin', 'manage:projects', 'manage:users');
+    if (hierarchy >= 80) permissions.push('admin:team', 'admin:projects', 'admin:licenses', 'admin:reports');
+    if (hierarchy >= 100) permissions.push('admin:all', 'read:all', 'write:all', 'delete:all', 'manage:all', 'admin:users', 'admin:organizations', 'admin:settings', 'admin:billing');
+    
+    // Role-specific permissions
+    if (role && (role.toLowerCase().includes('admin') || role.toLowerCase().includes('owner'))) {
+      permissions.push('admin:all', 'read:all', 'write:all', 'delete:all');
+    }
+    
+    return [...new Set(permissions)]; // Remove duplicates
   }
 
   // Authentication statistics tracking
@@ -469,7 +563,7 @@ class EnterpriseMockDataGenerator {
         console.log(`   🆕 User does not exist in Firebase Auth, creating...`);
         
         if (!isDryRun) {
-          const userRecord = await this.createFirebaseAuthUser(user.email, user.name, user.id);
+          const userRecord = await this.createFirebaseAuthUser(user.email, user.name, user.id, user.role, user.organizationId);
           
           // Update Firestore user with firebaseUid
           await this.updateFirestoreUser(user.id, userRecord.uid, user.collection);
@@ -776,11 +870,13 @@ class EnterpriseMockDataGenerator {
   async createOrganizationAndAdmin() {
     console.log('🏢 Creating enterprise organization and admin user...');
 
-    // Create Firebase Auth user for admin first
+    // Create Firebase Auth user for admin first with admin role
     await this.createFirebaseAuthUser(
       ENTERPRISE_CONFIG.adminEmail, 
       'Enterprise Admin', 
-      this.adminUserId
+      this.adminUserId,
+      'ADMIN', // Admin role for custom claims
+      this.organizationId
     );
 
     // Create organization
@@ -937,8 +1033,8 @@ class EnterpriseMockDataGenerator {
     const steveUserId = this.generateId('user');
     const steveEmail = 'smartin@example.com';
 
-    // Create Firebase Auth user for Steve Martin
-    await this.createFirebaseAuthUser(steveEmail, 'Steve Martin', steveUserId);
+    // Create Firebase Auth user for Steve Martin with admin role
+    await this.createFirebaseAuthUser(steveEmail, 'Steve Martin', steveUserId, 'admin', this.organizationId);
     
     // Create Steve Martin user
     const steveUserData = {
@@ -1030,8 +1126,8 @@ class EnterpriseMockDataGenerator {
       const lastName = faker.person.lastName();
       const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${ENTERPRISE_CONFIG.domain}`;
 
-      // Create Firebase Auth user for this team member
-      await this.createFirebaseAuthUser(email, `${firstName} ${lastName}`, userId);
+      // Create Firebase Auth user for this team member with their role
+      await this.createFirebaseAuthUser(email, `${firstName} ${lastName}`, userId, role, this.organizationId);
 
       // Create user
       const userData = {
