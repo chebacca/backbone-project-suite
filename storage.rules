@@ -10,15 +10,36 @@ service firebase.storage {
     
     // Allow organization members to access organization files
     match /organizations/{orgId}/{allPaths=**} {
-      allow read, write: if request.auth != null && 
-        exists(/databases/$(database)/documents/org_members/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/org_members/$(request.auth.uid)).data.organizationId == orgId;
+      allow read, write: if request.auth != null && (
+        // Check users collection
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId == orgId) ||
+        // Check users by email
+        (exists(/databases/$(database)/documents/users/$(request.auth.token.email)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.organizationId == orgId) ||
+        // Check teamMembers collection
+        (exists(/databases/$(database)/documents/teamMembers/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.organizationId == orgId) ||
+        // Check org_members collection (legacy)
+        (exists(/databases/$(database)/documents/org_members/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/org_members/$(request.auth.uid)).data.organizationId == orgId)
+      );
     }
     
     // Allow project members to access project files
     match /projects/{projectId}/{allPaths=**} {
       allow read, write: if request.auth != null && 
         exists(/databases/$(database)/documents/team_members/$(request.auth.uid + '_' + projectId));
+    }
+    
+    // Specific rule for map uploads - more permissive for authenticated users
+    match /organizations/{orgId}/maps/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to upload to their own standalone folders
+    match /standalone/{userId}/maps/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
     // Public read access for certain file types
